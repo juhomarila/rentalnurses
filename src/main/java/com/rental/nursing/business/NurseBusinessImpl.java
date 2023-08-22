@@ -1,6 +1,7 @@
 package com.rental.nursing.business;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -36,6 +37,11 @@ public class NurseBusinessImpl implements NurseBusiness {
 	@Override
 	public Optional<Nurse> getNurseById(Long id) {
 		return nurseDao.findById(id);
+	}
+
+	@Override
+	public List<Nurse> getAllNurses() {
+		return nurseDao.findAll();
 	}
 
 	private Nurse saveNurse(Nurse nurse, NurseDto dto) {

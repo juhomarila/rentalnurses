@@ -16,8 +16,9 @@ import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.entity.Employer;
 import com.rental.nursing.entity.EmployerRating;
 import com.rental.nursing.entity.Job;
-import com.rental.nursing.exception.EmployerNotFoundException;
+import com.rental.nursing.exception.NotFoundException;
 import com.rental.nursing.exception.SavingDataException;
+import com.rental.nursing.exception.ValidationException;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -45,7 +46,7 @@ public class EmployerServiceImpl implements EmployerService {
 			ValidationResult vrOutput = validator.validate(employerDto);
 			if (!vrOutput.validated) {
 				logger.error(ValidationError.EE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrInput.getErrorMsg());
+				throw new SavingDataException(vrOutput.getErrorMsg());
 			}
 			return employerDto;
 		} else {
@@ -54,8 +55,8 @@ public class EmployerServiceImpl implements EmployerService {
 	}
 
 	@Override
-	public EmployerDto updateEmployer(Long id, EmployerDto newEmployer) {
-		ValidationResult vrInput = validator.validate(newEmployer);
+	public EmployerDto updateEmployer(Long id, EmployerDto newEmployerDto) {
+		ValidationResult vrInput = validator.validate(newEmployerDto);
 		if (!vrInput.validated) {
 			logger.error(ValidationError.EE102 + vrInput.getErrorMsg());
 			throw new SavingDataException(vrInput.getErrorMsg());
@@ -63,11 +64,11 @@ public class EmployerServiceImpl implements EmployerService {
 		Optional<Employer> optEmployer = business.getEmployerById(id);
 		if (optEmployer.isPresent()) {
 			EmployerDto updatedEmployerDto = employerToDto(
-					business.updateEmployer(optEmployer.get(), newEmployer).get());
+					business.updateEmployer(optEmployer.get(), newEmployerDto).get());
 			ValidationResult vrOutput = validator.validate(updatedEmployerDto);
 			if (!vrOutput.validated) {
 				logger.error(ValidationError.EE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrInput.getErrorMsg());
+				throw new SavingDataException(vrOutput.getErrorMsg());
 			}
 			return updatedEmployerDto;
 		} else {
@@ -105,11 +106,11 @@ public class EmployerServiceImpl implements EmployerService {
 			} else {
 				logger.error(ValidationError.EE102 + vr.getErrorMsg());
 				logger.error(ValidationError.EE103 + employerDto.getId().toString());
+				throw new ValidationException(ValidationError.EE102 + vr.getErrorMsg());
 			}
 		} else {
-			throw new EmployerNotFoundException(ValidationError.EE101 + id);
+			throw new NotFoundException(ValidationError.EE101 + id);
 		}
-		return null;
 	}
 
 	@Override
@@ -139,13 +140,14 @@ public class EmployerServiceImpl implements EmployerService {
 		employerDto.setRating(calculateAverageRating(employer.getRatings()));
 		setPastAndFutureJobs(employer.getJobs(), employerDto);
 		if (employer.getJobs() != null) {
-			employer.getJobs().forEach(job -> {
-				if (!employerDto.getEmployedNurses().contains(job.getNurse())) {
-					employerDto.getEmployedNurses().add(job.getNurse());
-				}
-			});
-			employerDto.setHasOpenJobs(employer.getJobs().stream().anyMatch(job -> job.getNurse() == null));
+			List<Long> employedNurseIds = employer.getJobs().stream().filter(job -> job.getNurse() != null)
+					.map(job -> job.getNurse().getId()).distinct().collect(Collectors.toList());
+
+			employerDto.setEmployedNurses(employedNurseIds);
+			employerDto.setHasOpenJobs(employer.getJobs().stream()
+					.anyMatch(job -> job.getNurse() == null && job.getStartTime().isBefore(Instant.now())));
 		}
+
 		employerDto.setVerified(employer.isVerified());
 		return employerDto;
 	}
@@ -164,10 +166,10 @@ public class EmployerServiceImpl implements EmployerService {
 
 	private void setPastAndFutureJobs(List<Job> jobs, EmployerDto employerDto) {
 		if (jobs != null) {
-			List<Job> pastJobs = jobs.stream().filter(job -> job.getDate().isBefore(Instant.now()))
-					.collect(Collectors.toList());
-			List<Job> futureJobs = jobs.stream().filter(job -> job.getDate().isAfter(Instant.now()))
-					.collect(Collectors.toList());
+			List<Long> pastJobs = jobs.stream().filter(job -> job.getEndTime().isBefore(Instant.now()))
+					.map(j -> j.getId()).collect(Collectors.toList());
+			List<Long> futureJobs = jobs.stream().filter(job -> job.getStartTime().isAfter(Instant.now()))
+					.map(j -> j.getId()).collect(Collectors.toList());
 			employerDto.setPastJobs(pastJobs);
 			employerDto.setFutureJobs(futureJobs);
 		}

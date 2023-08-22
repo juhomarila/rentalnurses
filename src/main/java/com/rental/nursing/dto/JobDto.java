@@ -16,7 +16,8 @@ public class JobDto {
 	private String name;
 	private String city;
 	private String info;
-	private Instant date;
+	private Instant startTime;
+	private Instant endTime;
 	private Double salary;
 	private Long employerId;
 	private Long nurseId;

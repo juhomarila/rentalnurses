@@ -61,9 +61,43 @@ public class RatingServiceImpl implements RatingService {
 			ValidationResult vrOutput = employerRatingValidator.validate(employerRatingDto);
 			if (!vrOutput.validated) {
 				logger.error(ValidationError.RE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrInput.getErrorMsg());
+				throw new SavingDataException(vrOutput.getErrorMsg());
 			}
 			return employerRatingDto;
+		} else {
+			throw new IllegalStateException(ValidationError.RE201);
+		}
+	}
+
+	@Override
+	public NurseRatingDto createNurseRating(NurseRatingDto dto) {
+		ValidationResult vrInput = nurseRatingValidator.validate(dto);
+		if (ratingBusiness.getNurseRatingByEmployerAndNurseId(dto.getEmployerId(), dto.getNurseId()).isPresent()) {
+			vrInput.errorMsg.add(ValidationError.VE004 + ".exists");
+			vrInput.validated = false;
+		}
+		if (!nurseBusiness.getNurseById(dto.getNurseId()).get().isVerified()) {
+			vrInput.errorMsg.add(ValidationError.VE005 + ".notVerifiedNurse");
+			vrInput.validated = false;
+		}
+		if (!employerBusiness.getEmployerById(dto.getEmployerId()).get().isVerified()) {
+			vrInput.errorMsg.add(ValidationError.VE005 + ".notVerifiedEmployer");
+			vrInput.validated = false;
+		}
+		if (!vrInput.validated) {
+			logger.error(ValidationError.RE102 + vrInput.getErrorMsg());
+			throw new SavingDataException(vrInput.getErrorMsg());
+		}
+
+		Optional<NurseRating> optNurseRating = ratingBusiness.createNurseRating(dto);
+		if (optNurseRating.isPresent()) {
+			NurseRatingDto nurseRatingDto = nurseRatingToDto(optNurseRating.get());
+			ValidationResult vrOutput = nurseRatingValidator.validate(nurseRatingDto);
+			if (!vrOutput.validated) {
+				logger.error(ValidationError.RE102 + vrOutput.getErrorMsg());
+				throw new SavingDataException(vrOutput.getErrorMsg());
+			}
+			return nurseRatingDto;
 		} else {
 			throw new IllegalStateException(ValidationError.RE201);
 		}
@@ -80,7 +114,8 @@ public class RatingServiceImpl implements RatingService {
 		return employerRatingDto;
 	}
 
-	private NurseRatingDto nurseRatingToDto(NurseRating nurseRating) {
+	@Override
+	public NurseRatingDto nurseRatingToDto(NurseRating nurseRating) {
 		NurseRatingDto nurseRatingDto = new NurseRatingDto();
 		nurseRatingDto.setId(nurseRating.getId());
 		nurseRatingDto.setRating(nurseRating.getRating());
@@ -88,5 +123,4 @@ public class RatingServiceImpl implements RatingService {
 		nurseRatingDto.setNurseId(nurseRating.getNurse().getId());
 		return nurseRatingDto;
 	}
-
 }

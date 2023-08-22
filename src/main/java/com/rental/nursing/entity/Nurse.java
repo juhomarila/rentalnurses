@@ -3,6 +3,7 @@ package com.rental.nursing.entity;
 import java.time.Instant;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,7 +46,7 @@ public class Nurse {
 	private Instant joined;
 	private Instant edited;
 	private Instant lastEmployment;
-	@OneToMany(mappedBy = "nurse")
+	@OneToMany(mappedBy = "nurse", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<NurseRating> ratings;
 	@OneToMany(mappedBy = "nurse")
 	private List<Job> jobs;

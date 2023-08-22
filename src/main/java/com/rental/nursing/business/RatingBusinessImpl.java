@@ -12,13 +12,19 @@ import org.springframework.stereotype.Service;
 import com.rental.nursing.dao.EmployerDao;
 import com.rental.nursing.dao.EmployerRatingDao;
 import com.rental.nursing.dao.NurseDao;
+import com.rental.nursing.dao.NurseRatingDao;
 import com.rental.nursing.dto.EmployerRatingDto;
+import com.rental.nursing.dto.NurseRatingDto;
 import com.rental.nursing.entity.EmployerRating;
+import com.rental.nursing.entity.NurseRating;
 
 @Service
 public class RatingBusinessImpl implements RatingBusiness {
 	@Autowired
 	private EmployerRatingDao employerRatingDao;
+
+	@Autowired
+	private NurseRatingDao nurseRatingDao;
 
 	@Autowired
 	private EmployerDao employerDao;
@@ -40,14 +46,36 @@ public class RatingBusinessImpl implements RatingBusiness {
 			employerRating = employerRatingDao.save(employerRating);
 			return Optional.of(employerRating);
 		} catch (Exception e) {
-			logger.error(RatingErrorMessages.RATING_SAVE_ERROR + e.getMessage());
+			logger.error(RatingErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			return Optional.empty();
 		}
-		return Optional.empty();
 	}
 
 	@Override
 	public Optional<EmployerRating> getEmployerRatingByEmployerAndNurseId(Long employerId, Long nurseId) {
 		List<EmployerRating> ratings = employerRatingDao.findByEmployerIdAndNurseId(employerId, nurseId);
+		return ratings.isEmpty() ? Optional.empty() : Optional.of(ratings.get(0));
+	}
+
+	@Override
+	public Optional<NurseRating> createNurseRating(NurseRatingDto dto) {
+		try {
+			NurseRating nurseRating = new NurseRating();
+			nurseRating.setRating(dto.getRating());
+			nurseRating.setEmployer(employerDao.findById(dto.getEmployerId()).get());
+			nurseRating.setNurse(nurseDao.findById(dto.getNurseId()).get());
+			nurseRating.setAdded(Instant.now());
+			nurseRating = nurseRatingDao.save(nurseRating);
+			return Optional.of(nurseRating);
+		} catch (Exception e) {
+			logger.error(RatingErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			return Optional.empty();
+		}
+	}
+
+	@Override
+	public Optional<NurseRating> getNurseRatingByEmployerAndNurseId(Long employerId, Long nurseId) {
+		List<NurseRating> ratings = nurseRatingDao.findByEmployerIdAndNurseId(employerId, nurseId);
 		return ratings.isEmpty() ? Optional.empty() : Optional.of(ratings.get(0));
 	}
 

@@ -3,9 +3,6 @@ package com.rental.nursing.dto;
 import java.time.Instant;
 import java.util.List;
 
-import com.rental.nursing.entity.Job;
-import com.rental.nursing.entity.Nurse;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,9 +25,9 @@ public class EmployerDto {
 	private Instant edited;
 	private Instant lastEmployment;
 	private Double rating;
-	private List<Job> pastJobs;
-	private List<Job> futureJobs;
-	private List<Nurse> employedNurses;
+	private List<Long> pastJobs;
+	private List<Long> futureJobs;
+	private List<Long> employedNurses;
 	private boolean hasOpenJobs;
 	private boolean verified;
 }

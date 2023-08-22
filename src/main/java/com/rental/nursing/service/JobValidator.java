@@ -31,8 +31,11 @@ public class JobValidator {
 		if (jobDto.getCity() == null || jobDto.getCity().length() < 1) {
 			errorMsg.add(ValidationError.VE001 + ".city");
 		}
-		if (jobDto.getDate() == null || jobDto.getDate().toString().length() < 1) {
-			errorMsg.add(ValidationError.VE001 + ".date");
+		if (jobDto.getStartTime() == null || jobDto.getStartTime().toString().length() < 1) {
+			errorMsg.add(ValidationError.VE001 + ".startTime");
+		}
+		if (jobDto.getEndTime() == null || jobDto.getEndTime().toString().length() < 1) {
+			errorMsg.add(ValidationError.VE001 + ".endTime");
 		}
 		if (jobDto.getSalary() == null || jobDto.getSalary().toString().length() < 1) {
 			errorMsg.add(ValidationError.VE001 + ".salary");
@@ -73,9 +76,14 @@ public class JobValidator {
 				errorMsg.add(ValidationError.VE003 + ".city");
 			}
 		}
-		if (jobDto.getDate() != null) {
-			if (jobDto.getDate().isBefore(Instant.now())) {
-				errorMsg.add(ValidationError.VE006 + ".tooEarly");
+		if (jobDto.getStartTime() != null) {
+			if (jobDto.getStartTime().isBefore(Instant.now())) {
+				errorMsg.add(ValidationError.VE006 + ".cannotBeInPast");
+			}
+		}
+		if (jobDto.getEndTime() != null && jobDto.getStartTime() != null) {
+			if (jobDto.getEndTime().isBefore(jobDto.getStartTime())) {
+				errorMsg.add(ValidationError.VE006 + ".cannotBeBeforeStartTime");
 			}
 		}
 		if (jobDto.getLatitude() != null) {

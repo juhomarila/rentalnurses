@@ -1,6 +1,7 @@
 package com.rental.nursing.service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,12 +42,30 @@ public class NurseServiceImpl implements NurseService {
 			ValidationResult vrOutput = validator.validate(nurseDto);
 			if (!vrOutput.validated) {
 				logger.error(ValidationError.NE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrInput.getErrorMsg());
+				throw new SavingDataException(vrOutput.getErrorMsg());
 			}
 			return nurseDto;
 		} else {
 			throw new IllegalStateException(ValidationError.NE201);
 		}
+	}
+
+	@Override
+	public List<NurseDto> getAllNurses() {
+		List<NurseDto> nurseDtos = business.getAllNurses().stream().map(nurse -> nurseToDto(nurse))
+				.collect(Collectors.toList());
+		List<NurseDto> validatedNurseDtos = new ArrayList<>();
+
+		for (NurseDto dto : nurseDtos) {
+			ValidationResult vr = validator.validate(dto);
+			if (vr.validated) {
+				validatedNurseDtos.add(dto);
+			} else {
+				logger.error(ValidationError.NE102 + vr.getErrorMsg());
+				logger.error(ValidationError.NE103 + dto.getId().toString());
+			}
+		}
+		return validatedNurseDtos;
 	}
 
 	@Override
@@ -65,11 +84,11 @@ public class NurseServiceImpl implements NurseService {
 		nurseDto.setRating(calculateAverageRating(nurse.getRatings()));
 		setPastAndFutureJobs(nurse.getJobs(), nurseDto);
 		if (nurse.getJobs() != null) {
-			nurse.getJobs().forEach(job -> {
-				if (!nurseDto.getEmployers().contains(job.getEmployer())) {
-					nurseDto.getEmployers().add(job.getEmployer());
-				}
-			});
+			List<Long> employerIds = nurse.getJobs().stream().map(job -> job.getEmployer().getId()).distinct()
+					.collect(Collectors.toList());
+			nurseDto.setEmployers(employerIds);
+			nurseDto.setDoingJob(nurse.getJobs().stream().anyMatch(
+					job -> job.getStartTime().isBefore(Instant.now()) && job.getEndTime().isAfter(Instant.now())));
 		}
 		nurseDto.setVerified(nurse.isVerified());
 		return nurseDto;
@@ -89,10 +108,10 @@ public class NurseServiceImpl implements NurseService {
 
 	private void setPastAndFutureJobs(List<Job> jobs, NurseDto nurseDto) {
 		if (jobs != null) {
-			List<Job> pastJobs = jobs.stream().filter(job -> job.getDate().isBefore(Instant.now()))
-					.collect(Collectors.toList());
-			List<Job> futureJobs = jobs.stream().filter(job -> job.getDate().isAfter(Instant.now()))
-					.collect(Collectors.toList());
+			List<Long> pastJobs = jobs.stream().filter(job -> job.getEndTime().isBefore(Instant.now()))
+					.map(j -> j.getId()).collect(Collectors.toList());
+			List<Long> futureJobs = jobs.stream().filter(job -> job.getStartTime().isAfter(Instant.now()))
+					.map(j -> j.getId()).collect(Collectors.toList());
 			nurseDto.setPastJobs(pastJobs);
 			nurseDto.setFutureJobs(futureJobs);
 		}

@@ -35,7 +35,9 @@ public class Job {
 	@Size(min = 2, max = 40)
 	private String city;
 	@NotNull
-	private Instant date;
+	private Instant startTime;
+	@NotNull
+	private Instant endTime;
 	@NotNull
 	private Double salary;
 	@NotNull

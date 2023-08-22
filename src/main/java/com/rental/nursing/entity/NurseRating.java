@@ -33,6 +33,7 @@ public class NurseRating {
 	private Employer employer;
 	@ManyToOne
 	@JoinColumn(name = "nurse_id", nullable = false)
+	@NotNull
 	private Nurse nurse;
 	private Instant added;
 }

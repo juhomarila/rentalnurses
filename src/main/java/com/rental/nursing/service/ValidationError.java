@@ -2,7 +2,7 @@ package com.rental.nursing.service;
 
 public class ValidationError {
 	/*
-	 * VE is ValidationError, EE is EmployerError, RE is RatingError
+	 * VE is ValidationError, EE is EmployerError, RE is RatingError, JE is JobError
 	 * 
 	 */
 	public static final String VE001 = "VE001: null";
@@ -13,6 +13,8 @@ public class ValidationError {
 	public static final String VE006 = "VE006: date";
 	public static final String VE007 = "VE007: range";
 	public static final String VE008 = "VE008: notvalid";
+	public static final String VE009 = "VE009: forbidden";
+	public static final String VE010 = "VE010: doesNotExist";
 	public static final String EE101 = "EE101: Employer not found ";
 	public static final String EE102 = "EE102: Employer data validation failed ";
 	public static final String EE103 = "EE103: Corrupt employer data ";
@@ -34,7 +36,12 @@ public class ValidationError {
 	public static final String JE101 = "JE101: Job not found ";
 	public static final String JE102 = "JE102: Job data validation failed ";
 	public static final String JE103 = "JE103: Corrupt Job data ";
+	public static final String JE104 = "JE104: Nurse Job update data validation failed ";
 	public static final String JE201 = "JE201: Job save error ";
 	public static final String JE202 = "JE202: Job update error ";
 	public static final String JE203 = "JE203: Job deletion error ";
+	public static final String JE204 = "JE204: Job deletion forbidden ";
+	public static final String JE205 = "JE205: Job update forbidden ";
+	public static final String JE206 = "JE206: Job update failed, nurse not in the system ";
+	public static final String JE207 = "JE207: Job update error employer not found ";
 }

@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.nursing.dto.EmployerDto;
-import com.rental.nursing.exception.EmployerNotFoundException;
+import com.rental.nursing.exception.NotFoundException;
 import com.rental.nursing.exception.SavingDataException;
+import com.rental.nursing.exception.ValidationException;
 import com.rental.nursing.service.EmployerService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -41,9 +42,9 @@ public class EmployerController {
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<?> updateEmployer(@PathVariable("id") Long id, @RequestBody EmployerDto newDto) {
+	public ResponseEntity<?> updateEmployer(@PathVariable("id") Long id, @RequestBody EmployerDto updatedDto) {
 		try {
-			EmployerDto employerDto = employerService.updateEmployer(id, newDto);
+			EmployerDto employerDto = employerService.updateEmployer(id, updatedDto);
 			return new ResponseEntity<>(employerDto, HttpStatus.OK);
 		} catch (SavingDataException e) {
 			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
@@ -63,8 +64,10 @@ public class EmployerController {
 		try {
 			EmployerDto employerDto = employerService.getEmployerById(id);
 			return ResponseEntity.ok(employerDto);
-		} catch (EmployerNotFoundException e) {
+		} catch (NotFoundException e) {
 			return ResponseEntity.notFound().build();
+		} catch (ValidationException e) {
+			return ResponseEntity.internalServerError().build();
 		}
 	}
 
