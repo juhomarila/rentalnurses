@@ -58,8 +58,8 @@ public class JobController {
 			return new ResponseEntity<>(jobDto, HttpStatus.OK);
 		} catch (SavingDataException e) {
 			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (EntityNotFoundException e) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		} catch (NotFoundException e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
 		}
 	}
 

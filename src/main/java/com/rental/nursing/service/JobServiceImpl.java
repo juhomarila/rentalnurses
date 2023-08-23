@@ -76,8 +76,7 @@ public class JobServiceImpl implements JobService {
 		ValidationResult vrInput = validator.validate(newJobDto);
 		Optional<Employer> optEmployer = employerBusiness.getEmployerById(newJobDto.getEmployerId());
 		if (!optEmployer.isPresent()) {
-			vrInput.errorMsg.add(ValidationError.VE001 + ".employerEntity");
-			vrInput.validated = false;
+			throw new NotFoundException(ValidationError.VE001 + ".employerEntity");
 		}
 		if (!vrInput.validated) {
 			logger.error(ValidationError.JE102 + vrInput.getErrorMsg());
@@ -95,7 +94,7 @@ public class JobServiceImpl implements JobService {
 			return updatedJobDto;
 
 		} else {
-			throw new EntityNotFoundException(ValidationError.JE202);
+			throw new NotFoundException(ValidationError.VE001 + ".jobEntity");
 		}
 	}
 
