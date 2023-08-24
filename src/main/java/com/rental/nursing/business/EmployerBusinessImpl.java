@@ -28,7 +28,7 @@ public class EmployerBusinessImpl implements EmployerBusiness {
 			employer = saveEmployer(employer, dto);
 			return Optional.of(employer);
 		} catch (Exception e) {
-			logger.error(EmployerErrorMessages.EMPLOYER_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.EMPLOYER_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}
@@ -40,7 +40,7 @@ public class EmployerBusinessImpl implements EmployerBusiness {
 			employer = saveEmployer(employer, dto);
 			return Optional.of(employer);
 		} catch (Exception e) {
-			logger.error(EmployerErrorMessages.EMPLOYER_UPDATE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.EMPLOYER_UPDATE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}

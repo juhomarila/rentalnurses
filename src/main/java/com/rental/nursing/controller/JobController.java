@@ -16,13 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.nursing.dto.JobDto;
 import com.rental.nursing.dto.NurseJobUpdateDto;
-import com.rental.nursing.exception.NotFoundException;
-import com.rental.nursing.exception.SavingDataException;
-import com.rental.nursing.exception.UpdateDataException;
-import com.rental.nursing.exception.ValidationException;
+import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.JobService;
-
-import jakarta.persistence.EntityNotFoundException;
+import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/job")
@@ -31,72 +27,69 @@ public class JobController {
 	@Autowired
 	private JobService jobService;
 
+	private final NurseLogger logger;
+
+	@Autowired
+	public JobController(NurseLogger logger) {
+		this.logger = logger;
+	}
+
 	@PostMapping
 	public ResponseEntity<?> createJob(@RequestBody JobDto dto) {
-		try {
-			JobDto jobDto = jobService.createJob(dto);
-			return new ResponseEntity<>(jobDto, HttpStatus.CREATED);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (IllegalStateException e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		} catch (EntityNotFoundException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
+		logger.postLogStart("createJob");
+		ValidateServiceResult<JobDto> vsr = jobService.createJob(dto);
+		logger.postLogEnd("createJob");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@GetMapping
 	public ResponseEntity<List<JobDto>> getAllJobs() {
-		List<JobDto> jobs = jobService.getAllJobs();
-		return jobs.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(jobs);
+		logger.getLogStart("getAllJobs");
+		ValidateServiceResult<List<JobDto>> vsr = jobService.getAllJobs();
+		logger.getLogEnd("getAllJobs");
+		return vsr.getT().isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(vsr.getT());
 	}
 
 	@PutMapping("/{id}")
 	public ResponseEntity<?> updateJob(@PathVariable("id") Long id, @RequestBody JobDto updatedJobDto) {
-		try {
-			JobDto jobDto = jobService.updateJob(id, updatedJobDto);
-			return new ResponseEntity<>(jobDto, HttpStatus.OK);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (NotFoundException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-		}
+		logger.putLogStart("updateJob");
+		ValidateServiceResult<JobDto> vsr = jobService.updateJob(id, updatedJobDto);
+		logger.putLogEnd("updateJob");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@PutMapping("/nurse/{id}")
 	public ResponseEntity<?> updateOrRemoveJobNurse(@PathVariable("id") Long id,
 			@RequestBody NurseJobUpdateDto nurseJobUpdateDto) {
-		try {
-			JobDto jobDto = jobService.updateOrRemoveJobNurse(id, nurseJobUpdateDto);
-			return new ResponseEntity<>(jobDto, HttpStatus.OK);
-		} catch (UpdateDataException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		}
+		logger.putLogStart("updateOrRemoveJobNurse");
+		ValidateServiceResult<JobDto> vsr = jobService.updateOrRemoveJobNurse(id, nurseJobUpdateDto);
+		logger.putLogEnd("updateOrRemoveJobNurse");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<JobDto> getJobById(@PathVariable("id") Long id) {
-		try {
-			JobDto jobDto = jobService.getJobById(id);
-			return ResponseEntity.ok(jobDto);
-		} catch (NotFoundException e) {
-			return ResponseEntity.notFound().build();
-		} catch (ValidationException e) {
-			return ResponseEntity.internalServerError().build();
-		}
+	public ResponseEntity<?> getJobById(@PathVariable("id") Long id) {
+		logger.getLogStart("getJobById");
+		ValidateServiceResult<JobDto> vsr = jobService.getJobById(id);
+		logger.getLogEnd("getJobById");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deleteJob(@PathVariable("id") Long id) {
-		try {
-			jobService.deleteJob(id);
-			return ResponseEntity.ok().build();
-		} catch (UpdateDataException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (EntityNotFoundException e) {
-			return ResponseEntity.notFound().build();
-		}
+		logger.deleteLogStart("getEmployerById");
+		ValidateServiceResult<Boolean> vsr = jobService.deleteJob(id);
+		logger.deleteLogEnd("getEmployerById");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

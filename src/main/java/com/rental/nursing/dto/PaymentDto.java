@@ -1,5 +1,7 @@
 package com.rental.nursing.dto;
 
+import java.time.Instant;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,4 +16,5 @@ public class PaymentDto {
 	private Long jobId;
 	private boolean paid;
 	private Double amount;
+	private Instant paymentTime;
 }

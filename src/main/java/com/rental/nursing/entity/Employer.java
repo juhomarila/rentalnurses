@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,6 +28,7 @@ public class Employer {
 	private Long id;
 	@NotBlank
 	@Size(min = 2, max = 99)
+	@Column(unique = true)
 	private String name;
 	@NotBlank
 	@Size(min = 5, max = 99)
@@ -37,6 +39,7 @@ public class Employer {
 	// Mahdollinen rajapinta josta tarkistetaan bic(y-tunnus)
 	@NotBlank
 	@Size(min = 2, max = 15)
+	@Column(unique = true)
 	private String bic;
 	@NotNull
 	@Max(99999)
@@ -49,10 +52,11 @@ public class Employer {
 	@NotNull
 	private Instant joined;
 	private Instant edited;
-	private Instant lastEmployment;
 	@OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<EmployerRating> ratings;
-	@OneToMany(mappedBy = "employer")
+	@OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Job> jobs;
+	@NotNull
 	private boolean verified;
+	private Instant deactivated;
 }

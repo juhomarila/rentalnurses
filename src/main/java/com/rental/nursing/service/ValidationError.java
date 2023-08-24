@@ -15,6 +15,7 @@ public class ValidationError {
 	public static final String VE008 = "VE008: notvalid";
 	public static final String VE009 = "VE009: forbidden";
 	public static final String VE010 = "VE010: doesNotExist";
+	public static final String VE011 = "VE011: exists";
 	public static final String EE101 = "EE101: Employer not found ";
 	public static final String EE102 = "EE102: Employer data validation failed ";
 	public static final String EE103 = "EE103: Corrupt employer data ";

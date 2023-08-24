@@ -9,8 +9,11 @@ import com.rental.nursing.dto.NurseDto;
 
 @Service
 public class NurseValidator {
-	public ValidationResult validate(NurseDto nurseDto) {
+	public ValidationResult validate(NurseDto nurseDto, boolean isNursePresent) {
 		List<String> errorMsg = new ArrayList<>();
+		if (!isNursePresent) {
+			errorMsg.add(ValidationError.VE001 + ".nurseEntity");
+		}
 		checkRequiredFields(nurseDto, errorMsg);
 		checkFieldLengths(nurseDto, errorMsg);
 

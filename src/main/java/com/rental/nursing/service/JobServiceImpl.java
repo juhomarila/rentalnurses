@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +17,7 @@ import com.rental.nursing.dto.NurseJobUpdateDto;
 import com.rental.nursing.entity.Employer;
 import com.rental.nursing.entity.Job;
 import com.rental.nursing.entity.Nurse;
-import com.rental.nursing.exception.NotFoundException;
-import com.rental.nursing.exception.SavingDataException;
-import com.rental.nursing.exception.UpdateDataException;
-import com.rental.nursing.exception.ValidationException;
-
-import jakarta.persistence.EntityNotFoundException;
+import com.rental.nursing.logging.NurseLogger;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -43,70 +36,72 @@ public class JobServiceImpl implements JobService {
 	@Autowired
 	private NurseJobUpdateValidator nurseJobUpdateValidator;
 
-	private static final Logger logger = LoggerFactory.getLogger(JobServiceImpl.class);
+	private final NurseLogger logger;
+
+	@Autowired
+	public JobServiceImpl(NurseLogger logger) {
+		this.logger = logger;
+	}
 
 	@Override
-	public JobDto createJob(JobDto dto) {
-		ValidationResult vrInput = validator.validate(dto);
-		if (!vrInput.validated) {
-			logger.error(ValidationError.JE102 + vrInput.getErrorMsg());
-			throw new SavingDataException(vrInput.getErrorMsg());
+	public ValidateServiceResult<JobDto> createJob(JobDto dto) {
+		boolean isEmployerPresent = employerBusiness.getEmployerById(dto.getEmployerId()).isPresent() ? true : false;
+		ValidationResult vr = validator.validate(dto, isEmployerPresent);
+		if (!vr.validated) {
+			logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 		Optional<Employer> optEmp = employerBusiness.getEmployerById(dto.getEmployerId());
 		if (optEmp.isPresent()) {
 			Optional<Job> optJob = business.createJob(dto);
 			if (optJob.isPresent()) {
 				JobDto jobDto = jobToDto(optJob.get());
-				ValidationResult vrOutput = validator.validate(jobDto);
-				if (!vrOutput.validated) {
-					logger.error(ValidationError.JE102 + vrOutput.getErrorMsg());
-					throw new SavingDataException(vrOutput.getErrorMsg());
+				vr = validator.validate(jobDto, true);
+				if (!vr.validated) {
+					logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
+					return new ValidateServiceResult<>(null, vr);
 				}
-				return jobDto;
-			} else {
-				throw new IllegalStateException(ValidationError.JE201);
+				return new ValidateServiceResult<>(jobDto, vr);
 			}
-		} else {
-			throw new EntityNotFoundException(ValidationError.JE207);
 		}
+		logger.logError(ValidationError.JE207);
+		return new ValidateServiceResult<>(null, vr);
 	}
 
 	@Override
-	public JobDto updateJob(Long id, JobDto newJobDto) {
-		ValidationResult vrInput = validator.validate(newJobDto);
-		Optional<Employer> optEmployer = employerBusiness.getEmployerById(newJobDto.getEmployerId());
-		if (!optEmployer.isPresent()) {
-			throw new NotFoundException(ValidationError.VE001 + ".employerEntity");
+	public ValidateServiceResult<JobDto> updateJob(Long id, JobDto newJobDto) {
+		boolean isEmployerPresent = employerBusiness.getEmployerById(newJobDto.getEmployerId()).isPresent() ? true
+				: false;
+		ValidationResult vr = validator.validate(newJobDto, isEmployerPresent);
+		if (!vr.validated) {
+			logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
-		if (!vrInput.validated) {
-			logger.error(ValidationError.JE102 + vrInput.getErrorMsg());
-			throw new SavingDataException(vrInput.getErrorMsg());
-		}
+
 		Optional<Job> optJob = business.getJobById(id);
 		if (optJob.isPresent() && optJob.get().getNurse() == null
 				&& optJob.get().getStartTime().isAfter(Instant.now())) {
 			JobDto updatedJobDto = jobToDto(business.updateJob(optJob.get(), newJobDto).get());
-			ValidationResult vrOutput = validator.validate(updatedJobDto);
-			if (!vrOutput.isValidated()) {
-				logger.error(ValidationError.JE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrOutput.getErrorMsg());
+			vr = validator.validate(updatedJobDto, true);
+			if (!vr.isValidated()) {
+				logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
+				return new ValidateServiceResult<>(null, vr);
 			}
-			return updatedJobDto;
-
-		} else {
-			throw new NotFoundException(ValidationError.VE001 + ".jobEntity");
+			return new ValidateServiceResult<>(updatedJobDto, vr);
 		}
+		logger.logError(ValidationError.JE202);
+		return new ValidateServiceResult<>(null, vr);
 	}
 
 	@Override
-	public JobDto updateOrRemoveJobNurse(Long id, NurseJobUpdateDto nurseJobUpdateDto) {
+	public ValidateServiceResult<JobDto> updateOrRemoveJobNurse(Long id, NurseJobUpdateDto nurseJobUpdateDto) {
 		Optional<Job> optJob = business.getJobById(id);
 		Optional<Nurse> optNurse = nurseBusiness.getNurseById(nurseJobUpdateDto.getNurseId());
 		ValidationResult vr = nurseJobUpdateValidator.validate(nurseJobUpdateDto, optJob, optNurse);
 
 		if (!vr.isValidated()) {
-			logger.error(ValidationError.JE104 + vr.getErrorMsg());
-			throw new SavingDataException(vr.getErrorMsg());
+			logger.logValidationFailure(ValidationError.JE104 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 
 		Job job = optJob.get();
@@ -121,73 +116,88 @@ public class JobServiceImpl implements JobService {
 			jobDto.setNurseId(removeNurse ? null : nurseJobUpdateDto.getNurseId());
 		} else {
 			vr.errorMsg.add(ValidationError.VE009 + (removeNurse ? ".givenIdsDoesNotMatch" : ".idsDoesNotMatch"));
-			logger.error(ValidationError.JE205 + vr.getErrorMsg());
-			throw new UpdateDataException(vr.getErrorMsg());
+			logger.logForbidden(ValidationError.JE205 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 
 		JobDto updatedJobDto = jobToDto(business.updateJob(job, jobDto).get());
-		ValidationResult vrOutput = validator.validate(updatedJobDto);
+		ValidationResult vrOutput = validator.validate(updatedJobDto, true);
 
 		if (!vrOutput.isValidated()) {
-			logger.error(ValidationError.JE102 + vrOutput.getErrorMsg());
-			throw new SavingDataException(vrOutput.getErrorMsg());
+			logger.logValidationFailure(ValidationError.JE102 + vrOutput.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 
-		return updatedJobDto;
+		return new ValidateServiceResult<>(updatedJobDto, vr);
 	}
 
 	@Override
-	public JobDto getJobById(Long id) {
+	public ValidateServiceResult<JobDto> getJobById(Long id) {
 		Optional<Job> optJob = business.getJobById(id);
-		if (optJob.isPresent()) {
-			JobDto jobDto = jobToDto(optJob.get());
-			ValidationResult vr = validator.validate(jobDto);
-			if (vr.validated) {
-				return jobDto;
+		ValidationResult vr = new ValidationResult();
+
+		if (optJob.isEmpty()) {
+			List<String> errorMsg = new ArrayList<>();
+			errorMsg.add(ValidationError.VE001 + ".jobEntity");
+			vr.setErrorMsg(errorMsg);
+
+			logger.logValidationFailure(ValidationError.JE101 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
+		}
+
+		JobDto jobDto = jobToDto(optJob.get());
+		vr = validator.validate(jobDto, true);
+
+		if (!vr.validated) {
+			logger.logValidationAndIdFailure(ValidationError.JE102 + vr.getErrorMsg(),
+					ValidationError.JE103 + jobDto.getId().toString());
+			return new ValidateServiceResult<>(null, vr);
+		}
+		return new ValidateServiceResult<>(jobDto, vr);
+	}
+
+	@Override
+	public ValidateServiceResult<Boolean> deleteJob(Long id) {
+		Optional<Job> optJob = business.getJobById(id);
+		ValidationResult vr = new ValidationResult();
+		if (optJob.isEmpty()) {
+			List<String> errorMsg = new ArrayList<>();
+			errorMsg.add(ValidationError.VE001 + ".jobEntity");
+			vr.setErrorMsg(errorMsg);
+
+			logger.logValidationFailure(ValidationError.JE101 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(false, vr);
+		}
+
+		vr = validator.validate(jobToDto(optJob.get()), true);
+
+		if (vr.validated) {
+			if (optJob.get().getNurse() == null) {
+				business.deleteJob(optJob.get());
 			} else {
-				logger.error(ValidationError.JE102 + vr.getErrorMsg());
-				logger.error(ValidationError.JE103 + jobDto.getId().toString());
-				throw new ValidationException(ValidationError.JE102 + vr.getErrorMsg());
+				vr.errorMsg.add(ValidationError.VE009 + ".nurseAssigned");
+				logger.logForbidden(ValidationError.JE204 + vr.getErrorMsg());
+				return new ValidateServiceResult<>(false, vr);
 			}
-		} else {
-			throw new NotFoundException(ValidationError.JE101 + id);
 		}
+		return new ValidateServiceResult<>(vr.validated, vr);
 	}
 
 	@Override
-	public void deleteJob(Long id) {
-		Optional<Job> optJob = business.getJobById(id);
-		if (optJob.isPresent()) {
-			ValidationResult vr = validator.validate(jobToDto(optJob.get()));
-			if (vr.validated) {
-				if (optJob.get().getNurse() == null) {
-					business.deleteJob(optJob.get());
-				} else {
-					vr.errorMsg.add(ValidationError.VE009 + ".nurseAssigned");
-					logger.error(ValidationError.JE204 + vr.getErrorMsg());
-					throw new UpdateDataException(vr.getErrorMsg());
-				}
-			}
-		} else {
-			throw new EntityNotFoundException(ValidationError.JE203);
-		}
-	}
-
-	@Override
-	public List<JobDto> getAllJobs() {
+	public ValidateServiceResult<List<JobDto>> getAllJobs() {
 		List<JobDto> jobDtos = business.getAllJobs().stream().map(job -> jobToDto(job)).collect(Collectors.toList());
 		List<JobDto> validatedJobDtos = new ArrayList<>();
 
 		for (JobDto dto : jobDtos) {
-			ValidationResult vr = validator.validate(dto);
+			ValidationResult vr = validator.validate(dto, true);
 			if (vr.validated) {
 				validatedJobDtos.add(dto);
 			} else {
-				logger.error(ValidationError.EE102 + vr.getErrorMsg());
-				logger.error(ValidationError.EE103 + dto.getId().toString());
+				logger.logValidationAndIdFailure(ValidationError.JE102 + vr.getErrorMsg(),
+						ValidationError.JE103 + dto.getId().toString());
 			}
 		}
-		return validatedJobDtos;
+		return new ValidateServiceResult<>(validatedJobDtos, new ValidationResult());
 	}
 
 	@Override

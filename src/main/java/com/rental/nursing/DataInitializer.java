@@ -8,6 +8,11 @@ import java.util.Random;
 import org.springframework.stereotype.Component;
 
 import com.github.javafaker.Faker;
+import com.rental.nursing.business.PaymentBusiness;
+import com.rental.nursing.controller.EmployerController;
+import com.rental.nursing.controller.JobController;
+import com.rental.nursing.controller.NurseController;
+import com.rental.nursing.controller.RatingController;
 import com.rental.nursing.dao.EmployerDao;
 import com.rental.nursing.dao.NurseDao;
 import com.rental.nursing.dto.EmployerDto;
@@ -16,50 +21,48 @@ import com.rental.nursing.dto.JobDto;
 import com.rental.nursing.dto.NurseDto;
 import com.rental.nursing.dto.NurseRatingDto;
 import com.rental.nursing.entity.Employer;
-import com.rental.nursing.entity.EmployerRating;
 import com.rental.nursing.entity.Nurse;
-import com.rental.nursing.entity.NurseRating;
-import com.rental.nursing.service.EmployerService;
-import com.rental.nursing.service.JobService;
-import com.rental.nursing.service.NurseService;
-import com.rental.nursing.service.RatingService;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class DataInitializer {
-	private final EmployerService employerService;
-	private final NurseService nurseService;
-	private final RatingService ratingService;
-	private final JobService jobService;
+	private final EmployerController employerController;
+	private final NurseController nurseController;
+	private final RatingController ratingController;
+	private final JobController jobController;
+	private final PaymentBusiness paymentBusiness;
 	private final EmployerDao employerRepository;
 	private final NurseDao nurseRepository;
 
-	public DataInitializer(EmployerService employerService, NurseService nurseService, RatingService ratingService,
-			EmployerDao employerRepository, NurseDao nurseRepository, JobService jobService) {
-		this.employerService = employerService;
-		this.nurseService = nurseService;
-		this.ratingService = ratingService;
+	public DataInitializer(EmployerController employerController, NurseController nurseController,
+			RatingController ratingController, JobController jobController, PaymentBusiness paymentBusiness,
+			EmployerDao employerRepository, NurseDao nurseRepository) {
+		this.employerController = employerController;
+		this.nurseController = nurseController;
+		this.ratingController = ratingController;
+		this.jobController = jobController;
+		this.paymentBusiness = paymentBusiness;
 		this.employerRepository = employerRepository;
 		this.nurseRepository = nurseRepository;
-		this.jobService = jobService;
 	}
 
 	@PostConstruct
 	public void init() {
-//		generateDefaultEmployers();
-//		generateDefaultNurses();
-//		List<Employer> employers = employerRepository.findAll();
-//		List<Nurse> nurses = nurseRepository.findAll();
-//		generateDefaultEmployerRatings(employers, nurses);
-//		generateDefaultNurseRatings(employers, nurses);
-//		generateDefaultJobs(employers, nurses);
+		generateDefaultEmployers();
+		generateDefaultNurses();
+		List<Employer> employers = employerRepository.findAll();
+		List<Nurse> nurses = nurseRepository.findAll();
+		generateDefaultEmployerRatings(employers, nurses);
+		generateDefaultNurseRatings(employers, nurses);
+		generateDefaultJobs(employers, nurses);
 	}
 
 	private void generateDefaultEmployers() {
 		Faker faker = new Faker();
+		Random random = new Random();
 		for (int i = 1; i <= 50; i++) {
-			Employer employer = new Employer();
+			EmployerDto employer = new EmployerDto();
 			employer.setName(faker.company().name());
 			employer.setAddress(faker.address().fullAddress());
 			employer.setCity(faker.address().city());
@@ -67,27 +70,34 @@ public class DataInitializer {
 			employer.setZipCode(Long.valueOf(12345));
 			employer.setSector("Hammashoito");
 			employer.setInfo(faker.lorem().characters(25));
-			employer.setJoined(Instant.now());
+			Long randomLong = random.nextLong(3 * 365) + Long.valueOf((long) 0);
+			Instant currentInstant = Instant.now();
+			Instant joined = currentInstant.minus(randomLong, ChronoUnit.DAYS);
+			employer.setJoined(joined);
 			employer.setVerified(true);
-			EmployerDto employerDto = employerService.employerToDto(employer);
-			employerService.createEmployer(employerDto);
+			// EmployerDto employerDto = employerService.employerToDto(employer);
+			employerController.createEmployer(employer);
 		}
 	}
 
 	private void generateDefaultNurses() {
 		Faker faker = new Faker();
+		Random random = new Random();
 		for (int i = 1; i <= 50; i++) {
-			Nurse nurse = new Nurse();
+			NurseDto nurse = new NurseDto();
 			nurse.setFirstName(faker.name().firstName());
 			nurse.setLastName(faker.name().lastName());
 			nurse.setCity(faker.address().city());
 			nurse.setZipCode(Long.valueOf(98765));
 			nurse.setSector("Hammashoito");
 			nurse.setInfo(faker.lorem().characters(25));
-			nurse.setJoined(Instant.now());
+			Long randomLong = random.nextLong(3 * 365) + Long.valueOf((long) 0);
+			Instant currentInstant = Instant.now();
+			Instant joined = currentInstant.minus(randomLong, ChronoUnit.DAYS);
+			nurse.setJoined(joined);
 			nurse.setVerified(true);
-			NurseDto nurseDto = nurseService.nurseToDto(nurse);
-			nurseService.createNurse(nurseDto);
+			// NurseDto nurseDto = nurseService.nurseToDto(nurse);
+			nurseController.createNurse(nurse);
 		}
 	}
 
@@ -96,30 +106,30 @@ public class DataInitializer {
 		Random random = new Random();
 		for (Employer employer : employers) {
 			for (Nurse nurse : nurses) {
-				EmployerRating rating = new EmployerRating();
+				EmployerRatingDto rating = new EmployerRatingDto();
 				rating.setRating(random.nextInt(5) + 1);
 				rating.setAdded(Instant.now());
-				rating.setNurse(nurse);
-				rating.setEmployer(employer);
+				rating.setNurseId(nurse.getId());
+				rating.setEmployerId(employer.getId());
 				rating.setComment(faker.lorem().characters(25));
-				EmployerRatingDto employerRatingDto = ratingService.employerRatingToDto(rating);
-				ratingService.createEmployerRating(employerRatingDto);
+				// EmployerRatingDto employerRatingDto =
+				// ratingService.employerRatingToDto(rating);
+				ratingController.createEmployerRating(rating);
 			}
 		}
 	}
 
 	private void generateDefaultNurseRatings(List<Employer> employers, List<Nurse> nurses) {
-		Faker faker = new Faker();
 		Random random = new Random();
 		for (Nurse nurse : nurses) {
 			for (Employer employer : employers) {
-				NurseRating rating = new NurseRating();
+				NurseRatingDto rating = new NurseRatingDto();
 				rating.setRating(random.nextInt(5) + 1);
 				rating.setAdded(Instant.now());
-				rating.setNurse(nurse);
-				rating.setEmployer(employer);
-				NurseRatingDto nurseRatingDto = ratingService.nurseRatingToDto(rating);
-				ratingService.createNurseRating(nurseRatingDto);
+				rating.setNurseId(nurse.getId());
+				rating.setEmployerId(employer.getId());
+				// NurseRatingDto nurseRatingDto = ratingService.nurseRatingToDto(rating);
+				ratingController.createNurseRating(rating);
 			}
 		}
 	}
@@ -151,7 +161,7 @@ public class DataInitializer {
 					jobDto.setNurseId(randomNurse.getId());
 				}
 
-				jobService.createJob(jobDto);
+				jobController.createJob(jobDto);
 			}
 		}
 	}

@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +14,7 @@ import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.entity.Employer;
 import com.rental.nursing.entity.EmployerRating;
 import com.rental.nursing.entity.Job;
-import com.rental.nursing.exception.NotFoundException;
-import com.rental.nursing.exception.SavingDataException;
-import com.rental.nursing.exception.ValidationException;
-
-import jakarta.persistence.EntityNotFoundException;
+import com.rental.nursing.logging.NurseLogger;
 
 @Service
 public class EmployerServiceImpl implements EmployerService {
@@ -30,102 +24,121 @@ public class EmployerServiceImpl implements EmployerService {
 	@Autowired
 	private EmployerValidator validator;
 
-	private static final Logger logger = LoggerFactory.getLogger(EmployerServiceImpl.class);
+	private final NurseLogger logger;
+
+	@Autowired
+	public EmployerServiceImpl(NurseLogger logger) {
+		this.logger = logger;
+	}
 
 	@Override
-	public EmployerDto createEmployer(EmployerDto dto) {
-		ValidationResult vrInput = validator.validate(dto);
-		if (!vrInput.validated) {
-			logger.error(ValidationError.EE102 + vrInput.getErrorMsg());
-			throw new SavingDataException(vrInput.getErrorMsg());
+	public ValidateServiceResult<EmployerDto> createEmployer(EmployerDto dto) {
+		ValidationResult vr = validator.validate(dto, true);
+		if (!vr.validated) {
+			logger.logValidationFailure(ValidationError.EE102 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 
 		Optional<Employer> optEmployer = business.createEmployer(dto);
 		if (optEmployer.isPresent()) {
 			EmployerDto employerDto = employerToDto(optEmployer.get());
-			ValidationResult vrOutput = validator.validate(employerDto);
-			if (!vrOutput.validated) {
-				logger.error(ValidationError.EE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrOutput.getErrorMsg());
-			}
-			return employerDto;
-		} else {
-			throw new IllegalStateException(ValidationError.EE201);
+			return new ValidateServiceResult<>(employerDto, vr);
 		}
+		logger.logError(ValidationError.EE201);
+		return new ValidateServiceResult<>(null, vr);
 	}
 
 	@Override
-	public EmployerDto updateEmployer(Long id, EmployerDto newEmployerDto) {
-		ValidationResult vrInput = validator.validate(newEmployerDto);
-		if (!vrInput.validated) {
-			logger.error(ValidationError.EE102 + vrInput.getErrorMsg());
-			throw new SavingDataException(vrInput.getErrorMsg());
+	public ValidateServiceResult<EmployerDto> updateEmployer(Long id, EmployerDto newEmployerDto) {
+		boolean isEmployerPresent = business.getEmployerById(id).isPresent() ? true : false;
+		ValidationResult vr = validator.validateForUpdate(newEmployerDto, isEmployerPresent, id);
+		if (!vr.isValidated()) {
+			logger.logValidationFailure(ValidationError.EE102 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
+
 		Optional<Employer> optEmployer = business.getEmployerById(id);
 		if (optEmployer.isPresent()) {
-			EmployerDto updatedEmployerDto = employerToDto(
-					business.updateEmployer(optEmployer.get(), newEmployerDto).get());
-			ValidationResult vrOutput = validator.validate(updatedEmployerDto);
-			if (!vrOutput.validated) {
-				logger.error(ValidationError.EE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrOutput.getErrorMsg());
+			Optional<Employer> optUpdatedEmployer = business.updateEmployer(optEmployer.get(), newEmployerDto);
+			if (optUpdatedEmployer.isPresent()) {
+				EmployerDto updatedEmployerDto = employerToDto(optUpdatedEmployer.get());
+				return new ValidateServiceResult<>(updatedEmployerDto, vr);
 			}
-			return updatedEmployerDto;
-		} else {
-			throw new EntityNotFoundException(ValidationError.EE202);
 		}
-
+		logger.logError(ValidationError.EE202);
+		return new ValidateServiceResult<>(null, vr);
 	}
 
 	@Override
-	public List<EmployerDto> getEmployers() {
+	public ValidateServiceResult<List<EmployerDto>> getEmployers() {
 		List<EmployerDto> employerDtos = business.getEmployers().stream().map(emp -> employerToDto(emp))
 				.collect(Collectors.toList());
 		List<EmployerDto> validatedEmployerDtos = new ArrayList<>();
 
 		for (EmployerDto dto : employerDtos) {
-			ValidationResult vr = validator.validate(dto);
+			ValidationResult vr = validator.validate(dto, false);
 			if (vr.validated) {
 				validatedEmployerDtos.add(dto);
 			} else {
-				logger.error(ValidationError.EE102 + vr.getErrorMsg());
-				logger.error(ValidationError.EE103 + dto.getId().toString());
+				logger.logValidationAndIdFailure(ValidationError.EE102 + vr.getErrorMsg(),
+						ValidationError.EE103 + dto.getId().toString());
 			}
 		}
-		return validatedEmployerDtos;
+		return new ValidateServiceResult<>(validatedEmployerDtos, new ValidationResult());
 	}
 
 	@Override
-	public EmployerDto getEmployerById(Long id) {
+	public ValidateServiceResult<EmployerDto> getEmployerById(Long id) {
 		Optional<Employer> optEmployer = business.getEmployerById(id);
-		if (optEmployer.isPresent()) {
-			EmployerDto employerDto = employerToDto(optEmployer.get());
-			ValidationResult vr = validator.validate(employerDto);
-			if (vr.validated) {
-				return employerDto;
-			} else {
-				logger.error(ValidationError.EE102 + vr.getErrorMsg());
-				logger.error(ValidationError.EE103 + employerDto.getId().toString());
-				throw new ValidationException(ValidationError.EE102 + vr.getErrorMsg());
-			}
-		} else {
-			throw new NotFoundException(ValidationError.EE101 + id);
+		ValidationResult vr = new ValidationResult();
+
+		if (optEmployer.isEmpty()) {
+			List<String> errorMsg = new ArrayList<>();
+			errorMsg.add(ValidationError.VE001 + ".employerEntity");
+			vr.setErrorMsg(errorMsg);
+
+			logger.logValidationFailure(ValidationError.EE101 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
+
+		EmployerDto employerDto = employerToDto(optEmployer.get());
+		vr = validator.validate(employerDto, false);
+
+		if (!vr.validated) {
+			logger.logValidationAndIdFailure(ValidationError.EE102 + vr.getErrorMsg(),
+					ValidationError.EE103 + employerDto.getId().toString());
+			return new ValidateServiceResult<>(null, vr);
+		}
+		return new ValidateServiceResult<>(employerDto, vr);
 	}
 
 	@Override
-	public void deleteEmployer(Long id) {
+	public ValidateServiceResult<Boolean> deleteEmployer(Long id) {
 		Optional<Employer> optEmployer = business.getEmployerById(id);
-		if (optEmployer.isPresent()) {
+		ValidationResult vr = new ValidationResult();
+
+		if (optEmployer.isEmpty()) {
+			List<String> errorMsg = new ArrayList<>();
+			errorMsg.add(ValidationError.VE001 + ".employerEntity");
+			vr.setErrorMsg(errorMsg);
+
+			logger.logValidationFailure(ValidationError.EE101 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(false, vr);
+		}
+
+		vr = validator.validate(employerToDto(optEmployer.get()), false);
+
+		if (vr.validated) {
 			business.deleteEmployer(optEmployer.get());
-		} else {
-			throw new EntityNotFoundException(ValidationError.EE203);
 		}
+
+		return new ValidateServiceResult<>(vr.validated, vr);
 	}
 
 	@Override
 	public EmployerDto employerToDto(Employer employer) {
 		EmployerDto employerDto = new EmployerDto();
+
 		employerDto.setId(employer.getId());
 		employerDto.setName(employer.getName());
 		employerDto.setAddress(employer.getAddress());
@@ -136,9 +149,10 @@ public class EmployerServiceImpl implements EmployerService {
 		employerDto.setInfo(employer.getInfo());
 		employerDto.setJoined(employer.getJoined());
 		employerDto.setEdited(employer.getEdited());
-		employerDto.setLastEmployment(employer.getLastEmployment());
 		employerDto.setRating(calculateAverageRating(employer.getRatings()));
+
 		setPastAndFutureJobs(employer.getJobs(), employerDto);
+
 		if (employer.getJobs() != null) {
 			List<Long> employedNurseIds = employer.getJobs().stream().filter(job -> job.getNurse() != null)
 					.map(job -> job.getNurse().getId()).distinct().collect(Collectors.toList());
@@ -149,6 +163,7 @@ public class EmployerServiceImpl implements EmployerService {
 		}
 
 		employerDto.setVerified(employer.isVerified());
+
 		return employerDto;
 	}
 
@@ -156,7 +171,9 @@ public class EmployerServiceImpl implements EmployerService {
 		if (employerRatings == null) {
 			return 0.0; // No ratings yet, return 0
 		}
+
 		int totalRating = 0;
+
 		for (EmployerRating employerRating : employerRatings) {
 			totalRating += employerRating.getRating();
 		}
@@ -168,8 +185,10 @@ public class EmployerServiceImpl implements EmployerService {
 		if (jobs != null) {
 			List<Long> pastJobs = jobs.stream().filter(job -> job.getEndTime().isBefore(Instant.now()))
 					.map(j -> j.getId()).collect(Collectors.toList());
+
 			List<Long> futureJobs = jobs.stream().filter(job -> job.getStartTime().isAfter(Instant.now()))
 					.map(j -> j.getId()).collect(Collectors.toList());
+
 			employerDto.setPastJobs(pastJobs);
 			employerDto.setFutureJobs(futureJobs);
 		}

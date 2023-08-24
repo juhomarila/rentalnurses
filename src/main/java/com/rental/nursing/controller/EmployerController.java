@@ -15,12 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.nursing.dto.EmployerDto;
-import com.rental.nursing.exception.NotFoundException;
-import com.rental.nursing.exception.SavingDataException;
-import com.rental.nursing.exception.ValidationException;
+import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.EmployerService;
-
-import jakarta.persistence.EntityNotFoundException;
+import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/employer")
@@ -29,55 +26,59 @@ public class EmployerController {
 	@Autowired
 	private EmployerService employerService;
 
+	private final NurseLogger logger;
+
+	@Autowired
+	public EmployerController(NurseLogger logger) {
+		this.logger = logger;
+	}
+
 	@PostMapping
 	public ResponseEntity<?> createEmployer(@RequestBody EmployerDto dto) {
-		try {
-			EmployerDto employerDto = employerService.createEmployer(dto);
-			return new ResponseEntity<>(employerDto, HttpStatus.CREATED);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (IllegalStateException e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+		logger.postLogStart("updateEmployer");
+		ValidateServiceResult<EmployerDto> vsr = employerService.createEmployer(dto);
+		logger.postLogEnd("updateEmployer");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@PutMapping("/{id}")
 	public ResponseEntity<?> updateEmployer(@PathVariable("id") Long id, @RequestBody EmployerDto updatedDto) {
-		try {
-			EmployerDto employerDto = employerService.updateEmployer(id, updatedDto);
-			return new ResponseEntity<>(employerDto, HttpStatus.OK);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (EntityNotFoundException e) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
+		logger.putLogStart("updateEmployer");
+		ValidateServiceResult<EmployerDto> vsr = employerService.updateEmployer(id, updatedDto);
+		logger.putLogEnd("updateEmployer");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@GetMapping
 	public ResponseEntity<List<EmployerDto>> getAllEmployers() {
-		List<EmployerDto> employers = employerService.getEmployers();
-		return employers.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(employers);
+		logger.getLogStart("getAllEmployers");
+		ValidateServiceResult<List<EmployerDto>> vsr = employerService.getEmployers();
+		logger.getLogEnd("getAllEmployers");
+		return vsr.getT().isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(vsr.getT());
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<EmployerDto> getEmployerById(@PathVariable("id") Long id) {
-		try {
-			EmployerDto employerDto = employerService.getEmployerById(id);
-			return ResponseEntity.ok(employerDto);
-		} catch (NotFoundException e) {
-			return ResponseEntity.notFound().build();
-		} catch (ValidationException e) {
-			return ResponseEntity.internalServerError().build();
-		}
+	public ResponseEntity<?> getEmployerById(@PathVariable("id") Long id) {
+		logger.getLogStart("getEmployerById");
+		ValidateServiceResult<EmployerDto> vsr = employerService.getEmployerById(id);
+		logger.getLogEnd("getEmployerById");
+
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deleteEmployer(@PathVariable("id") Long id) {
-		try {
-			employerService.deleteEmployer(id);
-			return ResponseEntity.ok().build();
-		} catch (EntityNotFoundException e) {
-			return ResponseEntity.notFound().build();
-		}
+	public ResponseEntity<?> deleteEmployer(@PathVariable("id") Long id) {
+		logger.deleteLogStart("getEmployerById");
+		ValidateServiceResult<Boolean> vsr = employerService.deleteEmployer(id);
+		logger.deleteLogEnd("getEmployerById");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

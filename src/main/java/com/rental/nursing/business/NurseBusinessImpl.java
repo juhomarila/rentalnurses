@@ -29,7 +29,7 @@ public class NurseBusinessImpl implements NurseBusiness {
 			nurse = saveNurse(nurse, dto);
 			return Optional.of(nurse);
 		} catch (Exception e) {
-			logger.error(NurseErrorMessages.NURSE_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.NURSE_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}

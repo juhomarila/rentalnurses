@@ -29,4 +29,5 @@ public class NurseDto {
 	private List<Long> employers;
 	private boolean doingJob;
 	private boolean verified;
+	private Instant deactivated;
 }

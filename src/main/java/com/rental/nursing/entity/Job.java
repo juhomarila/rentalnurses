@@ -2,12 +2,14 @@ package com.rental.nursing.entity;
 
 import java.time.Instant;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -58,4 +60,7 @@ public class Job {
 	@Max(180)
 	@NotNull
 	private Double longitude;
+	@NotNull
+	@OneToOne(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Payment payment;
 }

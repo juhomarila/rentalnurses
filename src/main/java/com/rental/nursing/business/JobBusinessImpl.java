@@ -14,6 +14,7 @@ import com.rental.nursing.dao.JobDao;
 import com.rental.nursing.dao.NurseDao;
 import com.rental.nursing.dto.JobDto;
 import com.rental.nursing.entity.Job;
+import com.rental.nursing.entity.Payment;
 
 @Service
 public class JobBusinessImpl implements JobBusiness {
@@ -36,7 +37,7 @@ public class JobBusinessImpl implements JobBusiness {
 			job = saveJob(job, dto);
 			return Optional.of(job);
 		} catch (Exception e) {
-			logger.error(JobErrorMessages.JOB_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.JOB_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}
@@ -48,7 +49,7 @@ public class JobBusinessImpl implements JobBusiness {
 			job = saveJob(job, dto);
 			return Optional.of(job);
 		} catch (Exception e) {
-			logger.error(JobErrorMessages.JOB_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.JOB_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}
@@ -81,6 +82,10 @@ public class JobBusinessImpl implements JobBusiness {
 				: null);
 		job.setLatitude(dto.getLatitude());
 		job.setLongitude(dto.getLongitude());
+		Payment payment = new Payment();
+		payment.setJob(job);
+		payment.setPaid(false);
+		job.setPayment(payment);
 		jobDao.save(job);
 		return job;
 	}

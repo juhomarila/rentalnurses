@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.nursing.dto.EmployerRatingDto;
 import com.rental.nursing.dto.NurseRatingDto;
-import com.rental.nursing.exception.SavingDataException;
+import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.RatingService;
+import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/rating")
@@ -20,28 +21,33 @@ public class RatingController {
 	@Autowired
 	RatingService ratingService;
 
+	private final NurseLogger logger;
+
+	@Autowired
+	public RatingController(NurseLogger logger) {
+		this.logger = logger;
+	}
+
 	@PostMapping("/employer")
 	public ResponseEntity<?> createEmployerRating(@RequestBody EmployerRatingDto dto) {
-		try {
-			EmployerRatingDto employerRatingDto = ratingService.createEmployerRating(dto);
-			return new ResponseEntity<>(employerRatingDto, HttpStatus.CREATED);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (IllegalStateException e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+		logger.postLogStart("createEmployerRating");
+		ValidateServiceResult<EmployerRatingDto> vsr = ratingService.createEmployerRating(dto);
+		logger.postLogEnd("createEmployerRating");
+
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@PostMapping("/nurse")
 	public ResponseEntity<?> createNurseRating(@RequestBody NurseRatingDto dto) {
-		try {
-			NurseRatingDto nurseRatingDto = ratingService.createNurseRating(dto);
-			return new ResponseEntity<>(nurseRatingDto, HttpStatus.CREATED);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (IllegalStateException e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+		logger.postLogStart("createNurseRating");
+		ValidateServiceResult<NurseRatingDto> vsr = ratingService.createNurseRating(dto);
+		logger.postLogEnd("createNurseRating");
+
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 }

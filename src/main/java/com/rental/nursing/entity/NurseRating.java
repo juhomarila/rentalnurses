@@ -29,11 +29,9 @@ public class NurseRating {
 	private Integer rating;
 	@ManyToOne
 	@JoinColumn(name = "employer_id", nullable = false)
-	@NotNull
 	private Employer employer;
 	@ManyToOne
 	@JoinColumn(name = "nurse_id", nullable = false)
-	@NotNull
 	private Nurse nurse;
 	private Instant added;
 }

@@ -30,11 +30,9 @@ public class EmployerRating {
 	private Integer rating;
 	@ManyToOne
 	@JoinColumn(name = "employer_id", nullable = false)
-	@NotNull
 	private Employer employer;
 	@ManyToOne
 	@JoinColumn(name = "nurse_id", nullable = false)
-	@NotNull
 	private Nurse nurse;
 	@Size(min = 5, max = 1000)
 	private String comment;

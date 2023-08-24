@@ -46,7 +46,7 @@ public class RatingBusinessImpl implements RatingBusiness {
 			employerRating = employerRatingDao.save(employerRating);
 			return Optional.of(employerRating);
 		} catch (Exception e) {
-			logger.error(RatingErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}
@@ -68,7 +68,7 @@ public class RatingBusinessImpl implements RatingBusiness {
 			nurseRating = nurseRatingDao.save(nurseRating);
 			return Optional.of(nurseRating);
 		} catch (Exception e) {
-			logger.error(RatingErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			logger.error(ErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}

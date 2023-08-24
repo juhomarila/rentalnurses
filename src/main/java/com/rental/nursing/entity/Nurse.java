@@ -50,5 +50,7 @@ public class Nurse {
 	private List<NurseRating> ratings;
 	@OneToMany(mappedBy = "nurse")
 	private List<Job> jobs;
+	@NotNull
 	private boolean verified;
+	private Instant deactivated;
 }

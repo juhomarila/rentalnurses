@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rental.nursing.dto.NurseDto;
-import com.rental.nursing.exception.SavingDataException;
+import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.NurseService;
+import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/nurse")
@@ -22,21 +23,28 @@ public class NurseController {
 	@Autowired
 	private NurseService nurseService;
 
+	private final NurseLogger logger;
+
+	@Autowired
+	public NurseController(NurseLogger logger) {
+		this.logger = logger;
+	}
+
 	@PostMapping
 	public ResponseEntity<?> createNurse(@RequestBody NurseDto dto) {
-		try {
-			NurseDto nurseDto = nurseService.createNurse(dto);
-			return new ResponseEntity<>(nurseDto, HttpStatus.CREATED);
-		} catch (SavingDataException e) {
-			return new ResponseEntity<>(e.getMessages(), HttpStatus.BAD_REQUEST);
-		} catch (IllegalStateException e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+		logger.postLogStart("createNurse");
+		ValidateServiceResult<NurseDto> vsr = nurseService.createNurse(dto);
+		logger.postLogEnd("createNurse");
+		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
+				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
+						vsr.getVr().validated ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@GetMapping
-	public ResponseEntity<List<NurseDto>> getAllEmployers() {
-		List<NurseDto> nurses = nurseService.getAllNurses();
-		return nurses.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(nurses);
+	public ResponseEntity<List<NurseDto>> getAllNurses() {
+		logger.getLogStart("getAllNurses");
+		ValidateServiceResult<List<NurseDto>> vsr = nurseService.getAllNurses();
+		logger.getLogEnd("getAllNurses");
+		return vsr.getT().isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(vsr.getT());
 	}
 }

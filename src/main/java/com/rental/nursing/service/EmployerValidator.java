@@ -2,15 +2,56 @@ package com.rental.nursing.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.rental.nursing.dao.EmployerDao;
 import com.rental.nursing.dto.EmployerDto;
+import com.rental.nursing.entity.Employer;
 
 @Service
 public class EmployerValidator {
-	public ValidationResult validate(EmployerDto employerDto) {
+	@Autowired
+	private EmployerDao employerDao;
+
+	public ValidationResult validate(EmployerDto employerDto, boolean isEmployerPresent) {
 		List<String> errorMsg = new ArrayList<>();
+		if (isEmployerPresent) {
+			if (employerDao.existsByName(employerDto.getName())) {
+				errorMsg.add(ValidationError.VE011 + ".name");
+			}
+			if (employerDao.existsByBic(employerDto.getBic())) {
+				errorMsg.add(ValidationError.VE011 + ".bic");
+			}
+		}
+		checkRequiredFields(employerDto, errorMsg);
+		checkFieldLengths(employerDto, errorMsg);
+
+		if (!errorMsg.isEmpty()) {
+			return new ValidationResult(errorMsg, false);
+		}
+		return new ValidationResult(true);
+	}
+
+	public ValidationResult validateForUpdate(EmployerDto employerDto, boolean isEmployerPresent,
+			Long existingEmployerId) {
+		List<String> errorMsg = new ArrayList<>();
+		if (!isEmployerPresent) {
+			errorMsg.add(ValidationError.VE001 + ".employerEntity");
+		}
+		if (isEmployerPresent) {
+			Optional<Employer> employerFromDb = employerDao.findById(existingEmployerId);
+			if (employerFromDb.isPresent() && !employerFromDb.get().getName().equals(employerDto.getName())
+					&& employerDao.existsByName(employerDto.getName())) {
+				errorMsg.add(ValidationError.VE011 + ".name");
+			}
+			if (employerFromDb.isPresent() && !employerFromDb.get().getBic().equals(employerDto.getBic())
+					&& employerDao.existsByBic(employerDto.getBic())) {
+				errorMsg.add(ValidationError.VE011 + ".bic");
+			}
+		}
 		checkRequiredFields(employerDto, errorMsg);
 		checkFieldLengths(employerDto, errorMsg);
 

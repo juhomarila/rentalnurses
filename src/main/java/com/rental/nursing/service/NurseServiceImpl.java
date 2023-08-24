@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +14,7 @@ import com.rental.nursing.dto.NurseDto;
 import com.rental.nursing.entity.Job;
 import com.rental.nursing.entity.Nurse;
 import com.rental.nursing.entity.NurseRating;
-import com.rental.nursing.exception.SavingDataException;
+import com.rental.nursing.logging.NurseLogger;
 
 @Service
 public class NurseServiceImpl implements NurseService {
@@ -26,46 +24,75 @@ public class NurseServiceImpl implements NurseService {
 	@Autowired
 	private NurseValidator validator;
 
-	private static final Logger logger = LoggerFactory.getLogger(NurseServiceImpl.class);
+	private final NurseLogger logger;
+
+	@Autowired
+	public NurseServiceImpl(NurseLogger logger) {
+		this.logger = logger;
+	}
 
 	@Override
-	public NurseDto createNurse(NurseDto dto) {
-		ValidationResult vrInput = validator.validate(dto);
-		if (!vrInput.validated) {
-			logger.error(ValidationError.NE102 + vrInput.getErrorMsg());
-			throw new SavingDataException(vrInput.getErrorMsg());
+	public ValidateServiceResult<NurseDto> createNurse(NurseDto dto) {
+		ValidationResult vr = validator.validate(dto, true);
+		if (!vr.validated) {
+			logger.logValidationFailure(ValidationError.NE102 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
 		}
 
 		Optional<Nurse> optNurse = business.createNurse(dto);
 		if (optNurse.isPresent()) {
 			NurseDto nurseDto = nurseToDto(optNurse.get());
-			ValidationResult vrOutput = validator.validate(nurseDto);
-			if (!vrOutput.validated) {
-				logger.error(ValidationError.NE102 + vrOutput.getErrorMsg());
-				throw new SavingDataException(vrOutput.getErrorMsg());
+			vr = validator.validate(nurseDto, true);
+			if (!vr.validated) {
+				logger.logValidationFailure(ValidationError.NE102 + vr.getErrorMsg());
+				return new ValidateServiceResult<>(null, vr);
 			}
-			return nurseDto;
-		} else {
-			throw new IllegalStateException(ValidationError.NE201);
+			return new ValidateServiceResult<>(nurseDto, vr);
 		}
+		logger.logError(ValidationError.NE201);
+		return new ValidateServiceResult<>(null, vr);
 	}
 
 	@Override
-	public List<NurseDto> getAllNurses() {
+	public ValidateServiceResult<NurseDto> getNurseById(Long id) {
+		Optional<Nurse> optNurse = business.getNurseById(id);
+		ValidationResult vr = new ValidationResult();
+		if (optNurse.isEmpty()) {
+			List<String> errorMsg = new ArrayList<>();
+			errorMsg.add(ValidationError.VE001 + ".nurseEntity");
+			vr.setErrorMsg(errorMsg);
+
+			logger.logValidationFailure(ValidationError.NE101 + vr.getErrorMsg());
+			return new ValidateServiceResult<>(null, vr);
+		}
+
+		NurseDto nurseDto = nurseToDto(optNurse.get());
+		vr = validator.validate(nurseDto, true);
+
+		if (!vr.validated) {
+			logger.logValidationAndIdFailure(ValidationError.NE102 + vr.getErrorMsg(),
+					ValidationError.NE103 + nurseDto.getId().toString());
+			return new ValidateServiceResult<>(null, vr);
+		}
+		return new ValidateServiceResult<>(nurseDto, vr);
+	}
+
+	@Override
+	public ValidateServiceResult<List<NurseDto>> getAllNurses() {
 		List<NurseDto> nurseDtos = business.getAllNurses().stream().map(nurse -> nurseToDto(nurse))
 				.collect(Collectors.toList());
 		List<NurseDto> validatedNurseDtos = new ArrayList<>();
 
 		for (NurseDto dto : nurseDtos) {
-			ValidationResult vr = validator.validate(dto);
+			ValidationResult vr = validator.validate(dto, true);
 			if (vr.validated) {
 				validatedNurseDtos.add(dto);
 			} else {
-				logger.error(ValidationError.NE102 + vr.getErrorMsg());
-				logger.error(ValidationError.NE103 + dto.getId().toString());
+				logger.logValidationAndIdFailure(ValidationError.NE102 + vr.getErrorMsg(),
+						ValidationError.NE103 + dto.getId().toString());
 			}
 		}
-		return validatedNurseDtos;
+		return new ValidateServiceResult<>(validatedNurseDtos, new ValidationResult());
 	}
 
 	@Override

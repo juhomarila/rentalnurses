@@ -6,15 +6,15 @@ import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.entity.Employer;
 
 public interface EmployerService {
-	EmployerDto createEmployer(EmployerDto dto);
+	ValidateServiceResult<EmployerDto> createEmployer(EmployerDto dto);
 
-	EmployerDto updateEmployer(Long id, EmployerDto newEmployer);
+	ValidateServiceResult<EmployerDto> updateEmployer(Long id, EmployerDto newEmployer);
 
-	List<EmployerDto> getEmployers();
+	ValidateServiceResult<List<EmployerDto>> getEmployers();
 
-	EmployerDto getEmployerById(Long id);
+	ValidateServiceResult<EmployerDto> getEmployerById(Long id);
 
-	void deleteEmployer(Long id);
+	ValidateServiceResult<Boolean> deleteEmployer(Long id);
 
 	EmployerDto employerToDto(Employer employer);
 }

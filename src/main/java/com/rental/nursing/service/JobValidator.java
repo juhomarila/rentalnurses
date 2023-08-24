@@ -10,8 +10,11 @@ import com.rental.nursing.dto.JobDto;
 
 @Service
 public class JobValidator {
-	public ValidationResult validate(JobDto jobDto) {
+	public ValidationResult validate(JobDto jobDto, boolean isEmployerPresent) {
 		List<String> errorMsg = new ArrayList<>();
+		if (!isEmployerPresent) {
+			errorMsg.add(ValidationError.VE001 + ".employerEntity");
+		}
 		checkRequiredFields(jobDto, errorMsg);
 		checkFieldLengths(jobDto, errorMsg);
 
