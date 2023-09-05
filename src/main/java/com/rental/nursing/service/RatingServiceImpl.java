@@ -1,7 +1,5 @@
 package com.rental.nursing.service;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,17 +31,16 @@ public class RatingServiceImpl implements RatingService {
 	@Override
 	public ValidateServiceResult<EmployerRatingDto> createEmployerRating(EmployerRatingDto dto) {
 		boolean isRatingPresent = ratingBusiness
-				.getEmployerRatingByEmployerAndNurseId(dto.getEmployerId(), dto.getNurseId()).isPresent() ? true
-						: false;
-		ValidationResult vr = employerRatingValidator.validate(dto, isRatingPresent);
+				.getEmployerRatingByEmployerAndNurseId(dto.getEmployerId(), dto.getNurseId()).isPresent();
+		var vr = employerRatingValidator.validate(dto, isRatingPresent);
 		if (!vr.validated) {
 			logger.logValidationFailure(ValidationError.RE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Optional<EmployerRating> optEmployerRating = ratingBusiness.createEmployerRating(dto);
+		var optEmployerRating = ratingBusiness.createEmployerRating(dto);
 		if (optEmployerRating.isPresent()) {
-			EmployerRatingDto employerRatingDto = employerRatingToDto(optEmployerRating.get());
+			var employerRatingDto = employerRatingToDto(optEmployerRating.get());
 			vr = employerRatingValidator.validate(employerRatingDto, false);
 			if (!vr.validated) {
 				logger.logValidationFailure(ValidationError.RE102 + vr.getErrorMsg());
@@ -58,17 +55,17 @@ public class RatingServiceImpl implements RatingService {
 	@Override
 	public ValidateServiceResult<NurseRatingDto> createNurseRating(NurseRatingDto dto) {
 		boolean isRatingPresent = ratingBusiness
-				.getNurseRatingByEmployerAndNurseId(dto.getEmployerId(), dto.getNurseId()).isPresent() ? true : false;
-		ValidationResult vr = nurseRatingValidator.validate(dto, isRatingPresent);
+				.getNurseRatingByEmployerAndNurseId(dto.getEmployerId(), dto.getNurseId()).isPresent();
+		var vr = nurseRatingValidator.validate(dto, isRatingPresent);
 
 		if (!vr.validated) {
 			logger.logValidationFailure(ValidationError.RE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Optional<NurseRating> optNurseRating = ratingBusiness.createNurseRating(dto);
+		var optNurseRating = ratingBusiness.createNurseRating(dto);
 		if (optNurseRating.isPresent()) {
-			NurseRatingDto nurseRatingDto = nurseRatingToDto(optNurseRating.get());
+			var nurseRatingDto = nurseRatingToDto(optNurseRating.get());
 			vr = nurseRatingValidator.validate(dto, false);
 			if (!vr.validated) {
 				logger.logValidationFailure(ValidationError.RE102 + vr.getErrorMsg());
@@ -83,11 +80,10 @@ public class RatingServiceImpl implements RatingService {
 	@Override
 	public ValidateServiceResult<EmployerRatingDto> getEmployerRatingByEmployerAndNurseId(Long employerId,
 			Long nurseId) {
-		Optional<EmployerRating> optEmployerRating = ratingBusiness.getEmployerRatingByEmployerAndNurseId(employerId,
-				nurseId);
+		var optEmployerRating = ratingBusiness.getEmployerRatingByEmployerAndNurseId(employerId, nurseId);
 		if (optEmployerRating.isPresent()) {
-			EmployerRatingDto employerRatingDto = employerRatingToDto(optEmployerRating.get());
-			ValidationResult vr = employerRatingValidator.validate(employerRatingDto, false);
+			var employerRatingDto = employerRatingToDto(optEmployerRating.get());
+			var vr = employerRatingValidator.validate(employerRatingDto, false);
 			if (vr.validated) {
 				return new ValidateServiceResult<>(employerRatingDto, vr);
 			} else {
@@ -102,10 +98,10 @@ public class RatingServiceImpl implements RatingService {
 
 	@Override
 	public ValidateServiceResult<NurseRatingDto> getNurseRatingByEmployerAndNurseId(Long employerId, Long nurseId) {
-		Optional<NurseRating> optNurseRating = ratingBusiness.getNurseRatingByEmployerAndNurseId(employerId, nurseId);
+		var optNurseRating = ratingBusiness.getNurseRatingByEmployerAndNurseId(employerId, nurseId);
 		if (optNurseRating.isPresent()) {
-			NurseRatingDto nurseRatingDto = nurseRatingToDto(optNurseRating.get());
-			ValidationResult vr = nurseRatingValidator.validate(nurseRatingDto, false);
+			var nurseRatingDto = nurseRatingToDto(optNurseRating.get());
+			var vr = nurseRatingValidator.validate(nurseRatingDto, false);
 			if (vr.validated) {
 				return new ValidateServiceResult<>(nurseRatingDto, vr);
 			} else {
@@ -121,7 +117,7 @@ public class RatingServiceImpl implements RatingService {
 
 	@Override
 	public EmployerRatingDto employerRatingToDto(EmployerRating employerRating) {
-		EmployerRatingDto employerRatingDto = new EmployerRatingDto();
+		var employerRatingDto = new EmployerRatingDto();
 		employerRatingDto.setId(employerRating.getId());
 		employerRatingDto.setRating(employerRating.getRating());
 		employerRatingDto.setEmployerId(employerRating.getEmployer().getId());
@@ -132,7 +128,7 @@ public class RatingServiceImpl implements RatingService {
 
 	@Override
 	public NurseRatingDto nurseRatingToDto(NurseRating nurseRating) {
-		NurseRatingDto nurseRatingDto = new NurseRatingDto();
+		var nurseRatingDto = new NurseRatingDto();
 		nurseRatingDto.setId(nurseRating.getId());
 		nurseRatingDto.setRating(nurseRating.getRating());
 		nurseRatingDto.setEmployerId(nurseRating.getEmployer().getId());

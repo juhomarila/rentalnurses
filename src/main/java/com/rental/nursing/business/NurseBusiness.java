@@ -12,4 +12,8 @@ public interface NurseBusiness {
 	List<Nurse> getAllNurses();
 
 	Optional<Nurse> getNurseById(Long id);
+
+	Optional<Nurse> updateNurse(Nurse nurse, NurseDto newNurseDto);
+
+	void deleteNurse(Nurse nurse);
 }

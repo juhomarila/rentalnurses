@@ -15,7 +15,7 @@ import com.rental.nursing.entity.Nurse;
 public class NurseJobUpdateValidator {
 
 	public ValidationResult validate(NurseJobUpdateDto dto, Optional<Job> job, Optional<Nurse> nurse) {
-		List<String> errorMsg = new ArrayList<>();
+		var errorMsg = new ArrayList<String>();
 		checkRequiredFields(dto, errorMsg);
 		checkNurseAndJob(job, nurse, errorMsg);
 

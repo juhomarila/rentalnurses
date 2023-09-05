@@ -17,5 +17,5 @@ public interface EmployerRatingDao extends JpaRepository<EmployerRating, Long> {
 	List<EmployerRating> findByNurseId(long nurseId);
 
 	@Transactional
-	List<EmployerRating> findByEmployerIdAndNurseId(long employerId, long nurseId);
+	EmployerRating findByEmployerIdAndNurseId(long employerId, long nurseId);
 }

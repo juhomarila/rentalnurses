@@ -8,9 +8,13 @@ import com.rental.nursing.entity.Nurse;
 public interface NurseService {
 	ValidateServiceResult<NurseDto> createNurse(NurseDto dto);
 
-	ValidateServiceResult<NurseDto> getNurseById(Long id);
+	ValidateServiceResult<NurseDto> updateNurse(Long id, NurseDto dto);
 
 	ValidateServiceResult<List<NurseDto>> getAllNurses();
+
+	ValidateServiceResult<NurseDto> getNurseById(Long id);
+
+	ValidateServiceResult<Boolean> deleteNurse(Long id);
 
 	NurseDto nurseToDto(Nurse nurse);
 }

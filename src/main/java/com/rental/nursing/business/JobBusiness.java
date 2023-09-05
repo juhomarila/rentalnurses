@@ -15,5 +15,11 @@ public interface JobBusiness {
 
 	List<Job> getAllJobs();
 
+	List<Job> findJobsByEmployerId(Long id);
+
+	List<Job> findJobsByNurseId(Long id);
+
 	void deleteJob(Job job);
+
+	public JobDto jobToDto(Job job);
 }

@@ -34,4 +34,5 @@ public class NurseRating {
 	@JoinColumn(name = "nurse_id", nullable = false)
 	private Nurse nurse;
 	private Instant added;
+	private Instant edited;
 }

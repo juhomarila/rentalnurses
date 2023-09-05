@@ -49,13 +49,13 @@ public class DataInitializer {
 
 	@PostConstruct
 	public void init() {
-		generateDefaultEmployers();
-		generateDefaultNurses();
-		List<Employer> employers = employerRepository.findAll();
-		List<Nurse> nurses = nurseRepository.findAll();
-		generateDefaultEmployerRatings(employers, nurses);
-		generateDefaultNurseRatings(employers, nurses);
-		generateDefaultJobs(employers, nurses);
+//		generateDefaultEmployers();
+//		generateDefaultNurses();
+//		List<Employer> employers = employerRepository.findAll();
+//		List<Nurse> nurses = nurseRepository.findAll();
+//		generateDefaultEmployerRatings(employers, nurses);
+//		generateDefaultNurseRatings(employers, nurses);
+//		generateDefaultJobs(employers, nurses);
 	}
 
 	private void generateDefaultEmployers() {

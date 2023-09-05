@@ -69,6 +69,16 @@ public class JobBusinessImpl implements JobBusiness {
 		return jobDao.findAll();
 	}
 
+	@Override
+	public List<Job> findJobsByEmployerId(Long id) {
+		return jobDao.findByEmployerId(id);
+	}
+
+	@Override
+	public List<Job> findJobsByNurseId(Long id) {
+		return jobDao.findByNurseId(id);
+	}
+
 	private Job saveJob(Job job, JobDto dto) {
 		job.setName(dto.getName());
 		job.setInfo(dto.getInfo());
@@ -88,5 +98,23 @@ public class JobBusinessImpl implements JobBusiness {
 		job.setPayment(payment);
 		jobDao.save(job);
 		return job;
+	}
+
+	@Override
+	public JobDto jobToDto(Job job) {
+		var jobDto = new JobDto();
+		jobDto.setId(job.getId());
+		jobDto.setName(job.getName());
+		jobDto.setCity(job.getCity());
+		jobDto.setInfo(job.getInfo());
+		jobDto.setStartTime(job.getStartTime());
+		jobDto.setEndTime(job.getEndTime());
+		jobDto.setSalary(job.getSalary());
+		jobDto.setEmployerId(job.getEmployer().getId());
+		jobDto.setNurseId(job.getNurse() != null ? job.getNurse().getId() : null);
+		jobDto.setLatitude(job.getLatitude());
+		jobDto.setLongitude(job.getLongitude());
+		jobDto.setOpen(job.getNurse() == null ? true : false);
+		return jobDto;
 	}
 }

@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import com.rental.nursing.dao.EmployerDao;
 import com.rental.nursing.dao.NurseDao;
 import com.rental.nursing.dto.NurseRatingDto;
-import com.rental.nursing.entity.Employer;
-import com.rental.nursing.entity.Nurse;
 
 @Service
 public class NurseRatingValidator {
@@ -21,7 +19,7 @@ public class NurseRatingValidator {
 	private EmployerDao employerDao;
 
 	public ValidationResult validate(NurseRatingDto dto, boolean isRatingPresent) {
-		List<String> errorMsg = new ArrayList<>();
+		var errorMsg = new ArrayList<String>();
 		checkRequiredEntitiesExist(dto, errorMsg, isRatingPresent);
 		checkRequiredFields(dto, errorMsg);
 
@@ -45,8 +43,8 @@ public class NurseRatingValidator {
 	}
 
 	private void checkRequiredEntitiesExist(NurseRatingDto dto, List<String> errorMsg, boolean isRatingPresent) {
-		Nurse nurse = nurseDao.findById(dto.getNurseId()).orElse(null);
-		Employer employer = employerDao.findById(dto.getEmployerId()).orElse(null);
+		var nurse = nurseDao.findById(dto.getNurseId()).orElse(null);
+		var employer = employerDao.findById(dto.getEmployerId()).orElse(null);
 
 		if (isRatingPresent) {
 			errorMsg.add(ValidationError.VE004 + ".exists");

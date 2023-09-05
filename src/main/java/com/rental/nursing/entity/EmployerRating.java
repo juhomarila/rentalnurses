@@ -37,4 +37,5 @@ public class EmployerRating {
 	@Size(min = 5, max = 1000)
 	private String comment;
 	private Instant added;
+	private Instant edited;
 }

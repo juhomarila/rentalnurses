@@ -32,6 +32,7 @@ public class PaymentBusinessImpl implements PaymentBusiness {
 			payment = paymentDao.save(payment);
 			return Optional.of(payment);
 		} catch (Exception e) {
+			logger.error(ErrorMessages.PAYMENT_SAVE_ERROR + e.getMessage(), e);
 			return Optional.empty();
 		}
 	}

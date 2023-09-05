@@ -14,7 +14,9 @@ import com.rental.nursing.dao.EmployerRatingDao;
 import com.rental.nursing.dao.NurseDao;
 import com.rental.nursing.dao.NurseRatingDao;
 import com.rental.nursing.dto.EmployerRatingDto;
+import com.rental.nursing.dto.EmployerRatingUpdateDto;
 import com.rental.nursing.dto.NurseRatingDto;
+import com.rental.nursing.dto.NurseRatingUpdateDto;
 import com.rental.nursing.entity.EmployerRating;
 import com.rental.nursing.entity.NurseRating;
 
@@ -52,9 +54,40 @@ public class RatingBusinessImpl implements RatingBusiness {
 	}
 
 	@Override
+	public Optional<EmployerRating> updateEmployerRating(EmployerRating employerRating,
+			EmployerRatingUpdateDto newDto) {
+		try {
+			employerRating.setComment(newDto.getComment());
+			employerRating.setRating(newDto.getRating());
+			employerRating.setEdited(Instant.now());
+			employerRating = employerRatingDao.save(employerRating);
+			return Optional.of(employerRating);
+		} catch (Exception e) {
+			logger.error(ErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			return Optional.empty();
+		}
+	}
+
+	@Override
+	public List<EmployerRating> getEmployerRatingsByEmployerId(Long employerId) {
+		List<EmployerRating> ratings = employerRatingDao.findByEmployerId(employerId);
+		return ratings;
+	}
+
+	@Override
 	public Optional<EmployerRating> getEmployerRatingByEmployerAndNurseId(Long employerId, Long nurseId) {
-		List<EmployerRating> ratings = employerRatingDao.findByEmployerIdAndNurseId(employerId, nurseId);
-		return ratings.isEmpty() ? Optional.empty() : Optional.of(ratings.get(0));
+		return Optional.ofNullable(employerRatingDao.findByEmployerIdAndNurseId(employerId, nurseId));
+	}
+
+	@Override
+	public List<EmployerRating> getEmployerRatingsByNurseId(Long nurseId) {
+		List<EmployerRating> ratings = employerRatingDao.findByNurseId(nurseId);
+		return ratings;
+	}
+
+	@Override
+	public Optional<EmployerRating> getEmployerRatingById(Long id) {
+		return employerRatingDao.findById(id);
 	}
 
 	@Override
@@ -74,38 +107,31 @@ public class RatingBusinessImpl implements RatingBusiness {
 	}
 
 	@Override
+	public Optional<NurseRating> updateNurseRating(NurseRating nurseRating, NurseRatingUpdateDto newDto) {
+		try {
+			nurseRating.setRating(newDto.getRating());
+			nurseRating.setEdited(Instant.now());
+			nurseRating = nurseRatingDao.save(nurseRating);
+			return Optional.of(nurseRating);
+		} catch (Exception e) {
+			logger.error(ErrorMessages.RATING_SAVE_ERROR + e.getMessage(), e);
+			return Optional.empty();
+		}
+	}
+
+	@Override
 	public Optional<NurseRating> getNurseRatingByEmployerAndNurseId(Long employerId, Long nurseId) {
-		List<NurseRating> ratings = nurseRatingDao.findByEmployerIdAndNurseId(employerId, nurseId);
-		return ratings.isEmpty() ? Optional.empty() : Optional.of(ratings.get(0));
+		return Optional.ofNullable(nurseRatingDao.findByEmployerIdAndNurseId(employerId, nurseId));
 	}
 
 	@Override
-	public List<EmployerRating> getEmployerRatingsByEmployerId(Long employerId) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<NurseRating> getNurseRatingsByNurseId(Long nurseId) {
+		return nurseRatingDao.findByNurseId(nurseId);
 	}
 
 	@Override
-	public List<EmployerRating> getEmployerRatingsByNurseId(Long nurseId) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<NurseRating> getNurseRatingsByEmployerId(Long employerId) {
+		return nurseRatingDao.findByEmployerId(employerId);
 	}
 
-	@Override
-	public Optional<EmployerRating> getEmployerRatingById(Long id) {
-		// TODO Auto-generated method stub
-		return Optional.empty();
-	}
-
-	@Override
-	public Optional<EmployerRating> getEmployerRatingByEmployerId(Long employerId) {
-		// TODO Auto-generated method stub
-		return Optional.empty();
-	}
-
-	@Override
-	public Optional<EmployerRating> getEmployerRatingByNurseId(Long nurseId) {
-		// TODO Auto-generated method stub
-		return Optional.empty();
-	}
 }

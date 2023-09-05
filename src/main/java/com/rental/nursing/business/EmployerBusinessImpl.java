@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.rental.nursing.dao.EmployerDao;
+import com.rental.nursing.dao.NurseRatingDao;
 import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.entity.Employer;
 
@@ -17,6 +18,9 @@ import com.rental.nursing.entity.Employer;
 public class EmployerBusinessImpl implements EmployerBusiness {
 	@Autowired
 	private EmployerDao employerDao;
+
+	@Autowired
+	private NurseRatingDao nurseRatingDao;
 
 	private static final Logger logger = LoggerFactory.getLogger(EmployerBusinessImpl.class);
 
@@ -57,6 +61,12 @@ public class EmployerBusinessImpl implements EmployerBusiness {
 
 	@Override
 	public void deleteEmployer(Employer employer) {
+		var nurseRatings = nurseRatingDao.findByEmployerId(employer.getId());
+		if (nurseRatings.size() > 0) {
+			nurseRatings.forEach(rating -> {
+				nurseRatingDao.deleteById(rating.getId());
+			});
+		}
 		employerDao.delete(employer);
 	}
 

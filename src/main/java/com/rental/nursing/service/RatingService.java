@@ -8,9 +8,9 @@ import com.rental.nursing.entity.NurseRating;
 public interface RatingService {
 	ValidateServiceResult<EmployerRatingDto> createEmployerRating(EmployerRatingDto dto);
 
-	ValidateServiceResult<NurseRatingDto> createNurseRating(NurseRatingDto nurseRatingDto);
-
 	ValidateServiceResult<EmployerRatingDto> getEmployerRatingByEmployerAndNurseId(Long employerId, Long nurseId);
+
+	ValidateServiceResult<NurseRatingDto> createNurseRating(NurseRatingDto nurseRatingDto);
 
 	ValidateServiceResult<NurseRatingDto> getNurseRatingByEmployerAndNurseId(Long employerId, Long nurseId);
 

@@ -12,7 +12,6 @@ import com.rental.nursing.dto.EmployerRatingDto;
 import com.rental.nursing.dto.NurseRatingDto;
 import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.RatingService;
-import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/rating")
@@ -31,7 +30,7 @@ public class RatingController {
 	@PostMapping("/employer")
 	public ResponseEntity<?> createEmployerRating(@RequestBody EmployerRatingDto dto) {
 		logger.postLogStart("createEmployerRating");
-		ValidateServiceResult<EmployerRatingDto> vsr = ratingService.createEmployerRating(dto);
+		var vsr = ratingService.createEmployerRating(dto);
 		logger.postLogEnd("createEmployerRating");
 
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
@@ -42,7 +41,7 @@ public class RatingController {
 	@PostMapping("/nurse")
 	public ResponseEntity<?> createNurseRating(@RequestBody NurseRatingDto dto) {
 		logger.postLogStart("createNurseRating");
-		ValidateServiceResult<NurseRatingDto> vsr = ratingService.createNurseRating(dto);
+		var vsr = ratingService.createNurseRating(dto);
 		logger.postLogEnd("createNurseRating");
 
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)

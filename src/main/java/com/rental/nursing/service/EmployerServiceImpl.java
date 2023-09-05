@@ -3,13 +3,13 @@ package com.rental.nursing.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.rental.nursing.business.EmployerBusiness;
+import com.rental.nursing.business.JobBusiness;
 import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.entity.Employer;
 import com.rental.nursing.entity.EmployerRating;
@@ -20,6 +20,9 @@ import com.rental.nursing.logging.NurseLogger;
 public class EmployerServiceImpl implements EmployerService {
 	@Autowired
 	private EmployerBusiness business;
+
+	@Autowired
+	private JobBusiness jobBusiness;
 
 	@Autowired
 	private EmployerValidator validator;
@@ -33,15 +36,15 @@ public class EmployerServiceImpl implements EmployerService {
 
 	@Override
 	public ValidateServiceResult<EmployerDto> createEmployer(EmployerDto dto) {
-		ValidationResult vr = validator.validate(dto, true);
+		var vr = validator.validate(dto, true);
 		if (!vr.validated) {
 			logger.logValidationFailure(ValidationError.EE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Optional<Employer> optEmployer = business.createEmployer(dto);
+		var optEmployer = business.createEmployer(dto);
 		if (optEmployer.isPresent()) {
-			EmployerDto employerDto = employerToDto(optEmployer.get());
+			var employerDto = employerToDto(optEmployer.get());
 			return new ValidateServiceResult<>(employerDto, vr);
 		}
 		logger.logError(ValidationError.EE201);
@@ -51,17 +54,17 @@ public class EmployerServiceImpl implements EmployerService {
 	@Override
 	public ValidateServiceResult<EmployerDto> updateEmployer(Long id, EmployerDto newEmployerDto) {
 		boolean isEmployerPresent = business.getEmployerById(id).isPresent() ? true : false;
-		ValidationResult vr = validator.validateForUpdate(newEmployerDto, isEmployerPresent, id);
+		var vr = validator.validateForUpdate(newEmployerDto, isEmployerPresent, id);
 		if (!vr.isValidated()) {
 			logger.logValidationFailure(ValidationError.EE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Optional<Employer> optEmployer = business.getEmployerById(id);
+		var optEmployer = business.getEmployerById(id);
 		if (optEmployer.isPresent()) {
-			Optional<Employer> optUpdatedEmployer = business.updateEmployer(optEmployer.get(), newEmployerDto);
+			var optUpdatedEmployer = business.updateEmployer(optEmployer.get(), newEmployerDto);
 			if (optUpdatedEmployer.isPresent()) {
-				EmployerDto updatedEmployerDto = employerToDto(optUpdatedEmployer.get());
+				var updatedEmployerDto = employerToDto(optUpdatedEmployer.get());
 				return new ValidateServiceResult<>(updatedEmployerDto, vr);
 			}
 		}
@@ -71,12 +74,11 @@ public class EmployerServiceImpl implements EmployerService {
 
 	@Override
 	public ValidateServiceResult<List<EmployerDto>> getEmployers() {
-		List<EmployerDto> employerDtos = business.getEmployers().stream().map(emp -> employerToDto(emp))
-				.collect(Collectors.toList());
+		var employerDtos = business.getEmployers().stream().map(emp -> employerToDto(emp)).collect(Collectors.toList());
 		List<EmployerDto> validatedEmployerDtos = new ArrayList<>();
 
 		for (EmployerDto dto : employerDtos) {
-			ValidationResult vr = validator.validate(dto, false);
+			var vr = validator.validate(dto, false);
 			if (vr.validated) {
 				validatedEmployerDtos.add(dto);
 			} else {
@@ -89,8 +91,8 @@ public class EmployerServiceImpl implements EmployerService {
 
 	@Override
 	public ValidateServiceResult<EmployerDto> getEmployerById(Long id) {
-		Optional<Employer> optEmployer = business.getEmployerById(id);
-		ValidationResult vr = new ValidationResult();
+		var optEmployer = business.getEmployerById(id);
+		var vr = new ValidationResult();
 
 		if (optEmployer.isEmpty()) {
 			List<String> errorMsg = new ArrayList<>();
@@ -101,7 +103,7 @@ public class EmployerServiceImpl implements EmployerService {
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		EmployerDto employerDto = employerToDto(optEmployer.get());
+		var employerDto = employerToDto(optEmployer.get());
 		vr = validator.validate(employerDto, false);
 
 		if (!vr.validated) {
@@ -114,11 +116,11 @@ public class EmployerServiceImpl implements EmployerService {
 
 	@Override
 	public ValidateServiceResult<Boolean> deleteEmployer(Long id) {
-		Optional<Employer> optEmployer = business.getEmployerById(id);
-		ValidationResult vr = new ValidationResult();
+		var optEmployer = business.getEmployerById(id);
+		var vr = new ValidationResult();
+		var errorMsg = new ArrayList<String>();
 
 		if (optEmployer.isEmpty()) {
-			List<String> errorMsg = new ArrayList<>();
 			errorMsg.add(ValidationError.VE001 + ".employerEntity");
 			vr.setErrorMsg(errorMsg);
 
@@ -129,15 +131,23 @@ public class EmployerServiceImpl implements EmployerService {
 		vr = validator.validate(employerToDto(optEmployer.get()), false);
 
 		if (vr.validated) {
+			boolean hasUnpaidJobs = jobBusiness.findJobsByEmployerId(id).stream()
+					.anyMatch(job -> job.getPayment().isPaid() == false);
+			if (hasUnpaidJobs) {
+				errorMsg.add(ValidationError.VE012 + ".employer");
+				vr.setErrorMsg(errorMsg);
+				vr.setValidated(false);
+				logger.logValidationFailure(ValidationError.EE104 + vr.getErrorMsg());
+				return new ValidateServiceResult<>(false, vr);
+			}
 			business.deleteEmployer(optEmployer.get());
 		}
-
 		return new ValidateServiceResult<>(vr.validated, vr);
 	}
 
 	@Override
 	public EmployerDto employerToDto(Employer employer) {
-		EmployerDto employerDto = new EmployerDto();
+		var employerDto = new EmployerDto();
 
 		employerDto.setId(employer.getId());
 		employerDto.setName(employer.getName());
@@ -154,7 +164,7 @@ public class EmployerServiceImpl implements EmployerService {
 		setPastAndFutureJobs(employer.getJobs(), employerDto);
 
 		if (employer.getJobs() != null) {
-			List<Long> employedNurseIds = employer.getJobs().stream().filter(job -> job.getNurse() != null)
+			var employedNurseIds = employer.getJobs().stream().filter(job -> job.getNurse() != null)
 					.map(job -> job.getNurse().getId()).distinct().collect(Collectors.toList());
 
 			employerDto.setEmployedNurses(employedNurseIds);
@@ -183,11 +193,11 @@ public class EmployerServiceImpl implements EmployerService {
 
 	private void setPastAndFutureJobs(List<Job> jobs, EmployerDto employerDto) {
 		if (jobs != null) {
-			List<Long> pastJobs = jobs.stream().filter(job -> job.getEndTime().isBefore(Instant.now()))
-					.map(j -> j.getId()).collect(Collectors.toList());
+			var pastJobs = jobs.stream().filter(job -> job.getEndTime().isBefore(Instant.now())).map(j -> j.getId())
+					.collect(Collectors.toList());
 
-			List<Long> futureJobs = jobs.stream().filter(job -> job.getStartTime().isAfter(Instant.now()))
-					.map(j -> j.getId()).collect(Collectors.toList());
+			var futureJobs = jobs.stream().filter(job -> job.getStartTime().isAfter(Instant.now())).map(j -> j.getId())
+					.collect(Collectors.toList());
 
 			employerDto.setPastJobs(pastJobs);
 			employerDto.setFutureJobs(futureJobs);

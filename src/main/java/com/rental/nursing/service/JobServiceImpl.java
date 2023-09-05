@@ -3,7 +3,6 @@ package com.rental.nursing.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +13,7 @@ import com.rental.nursing.business.JobBusiness;
 import com.rental.nursing.business.NurseBusiness;
 import com.rental.nursing.dto.JobDto;
 import com.rental.nursing.dto.NurseJobUpdateDto;
-import com.rental.nursing.entity.Employer;
 import com.rental.nursing.entity.Job;
-import com.rental.nursing.entity.Nurse;
 import com.rental.nursing.logging.NurseLogger;
 
 @Service
@@ -46,16 +43,16 @@ public class JobServiceImpl implements JobService {
 	@Override
 	public ValidateServiceResult<JobDto> createJob(JobDto dto) {
 		boolean isEmployerPresent = employerBusiness.getEmployerById(dto.getEmployerId()).isPresent() ? true : false;
-		ValidationResult vr = validator.validate(dto, isEmployerPresent);
+		var vr = validator.validate(dto, isEmployerPresent);
 		if (!vr.validated) {
 			logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
-		Optional<Employer> optEmp = employerBusiness.getEmployerById(dto.getEmployerId());
+		var optEmp = employerBusiness.getEmployerById(dto.getEmployerId());
 		if (optEmp.isPresent()) {
-			Optional<Job> optJob = business.createJob(dto);
+			var optJob = business.createJob(dto);
 			if (optJob.isPresent()) {
-				JobDto jobDto = jobToDto(optJob.get());
+				var jobDto = jobToDto(optJob.get());
 				vr = validator.validate(jobDto, true);
 				if (!vr.validated) {
 					logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
@@ -72,16 +69,16 @@ public class JobServiceImpl implements JobService {
 	public ValidateServiceResult<JobDto> updateJob(Long id, JobDto newJobDto) {
 		boolean isEmployerPresent = employerBusiness.getEmployerById(newJobDto.getEmployerId()).isPresent() ? true
 				: false;
-		ValidationResult vr = validator.validate(newJobDto, isEmployerPresent);
+		var vr = validator.validate(newJobDto, isEmployerPresent);
 		if (!vr.validated) {
 			logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Optional<Job> optJob = business.getJobById(id);
+		var optJob = business.getJobById(id);
 		if (optJob.isPresent() && optJob.get().getNurse() == null
 				&& optJob.get().getStartTime().isAfter(Instant.now())) {
-			JobDto updatedJobDto = jobToDto(business.updateJob(optJob.get(), newJobDto).get());
+			var updatedJobDto = jobToDto(business.updateJob(optJob.get(), newJobDto).get());
 			vr = validator.validate(updatedJobDto, true);
 			if (!vr.isValidated()) {
 				logger.logValidationFailure(ValidationError.JE102 + vr.getErrorMsg());
@@ -95,19 +92,19 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public ValidateServiceResult<JobDto> updateOrRemoveJobNurse(Long id, NurseJobUpdateDto nurseJobUpdateDto) {
-		Optional<Job> optJob = business.getJobById(id);
-		Optional<Nurse> optNurse = nurseBusiness.getNurseById(nurseJobUpdateDto.getNurseId());
-		ValidationResult vr = nurseJobUpdateValidator.validate(nurseJobUpdateDto, optJob, optNurse);
+		var optJob = business.getJobById(id);
+		var optNurse = nurseBusiness.getNurseById(nurseJobUpdateDto.getNurseId());
+		var vr = nurseJobUpdateValidator.validate(nurseJobUpdateDto, optJob, optNurse);
 
 		if (!vr.isValidated()) {
 			logger.logValidationFailure(ValidationError.JE104 + vr.getErrorMsg());
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		Job job = optJob.get();
+		var job = optJob.get();
 		boolean nurseAssigned = job.getNurse() != null;
 
-		JobDto jobDto = jobToDto(job);
+		var jobDto = jobToDto(job);
 		boolean removeNurse = nurseJobUpdateDto.getRemoveNurse();
 
 		if (removeNurse && nurseAssigned && job.getNurse().getId().equals(nurseJobUpdateDto.getNurseId())) {
@@ -120,8 +117,8 @@ public class JobServiceImpl implements JobService {
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		JobDto updatedJobDto = jobToDto(business.updateJob(job, jobDto).get());
-		ValidationResult vrOutput = validator.validate(updatedJobDto, true);
+		var updatedJobDto = jobToDto(business.updateJob(job, jobDto).get());
+		var vrOutput = validator.validate(updatedJobDto, true);
 
 		if (!vrOutput.isValidated()) {
 			logger.logValidationFailure(ValidationError.JE102 + vrOutput.getErrorMsg());
@@ -133,11 +130,11 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public ValidateServiceResult<JobDto> getJobById(Long id) {
-		Optional<Job> optJob = business.getJobById(id);
-		ValidationResult vr = new ValidationResult();
+		var optJob = business.getJobById(id);
+		var vr = new ValidationResult();
 
 		if (optJob.isEmpty()) {
-			List<String> errorMsg = new ArrayList<>();
+			var errorMsg = new ArrayList<String>();
 			errorMsg.add(ValidationError.VE001 + ".jobEntity");
 			vr.setErrorMsg(errorMsg);
 
@@ -145,7 +142,7 @@ public class JobServiceImpl implements JobService {
 			return new ValidateServiceResult<>(null, vr);
 		}
 
-		JobDto jobDto = jobToDto(optJob.get());
+		var jobDto = jobToDto(optJob.get());
 		vr = validator.validate(jobDto, true);
 
 		if (!vr.validated) {
@@ -158,10 +155,10 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public ValidateServiceResult<Boolean> deleteJob(Long id) {
-		Optional<Job> optJob = business.getJobById(id);
-		ValidationResult vr = new ValidationResult();
+		var optJob = business.getJobById(id);
+		var vr = new ValidationResult();
 		if (optJob.isEmpty()) {
-			List<String> errorMsg = new ArrayList<>();
+			var errorMsg = new ArrayList<String>();
 			errorMsg.add(ValidationError.VE001 + ".jobEntity");
 			vr.setErrorMsg(errorMsg);
 
@@ -185,11 +182,11 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public ValidateServiceResult<List<JobDto>> getAllJobs() {
-		List<JobDto> jobDtos = business.getAllJobs().stream().map(job -> jobToDto(job)).collect(Collectors.toList());
-		List<JobDto> validatedJobDtos = new ArrayList<>();
+		var jobDtos = business.getAllJobs().stream().map(job -> jobToDto(job)).collect(Collectors.toList());
+		var validatedJobDtos = new ArrayList<JobDto>();
 
 		for (JobDto dto : jobDtos) {
-			ValidationResult vr = validator.validate(dto, true);
+			var vr = validator.validate(dto, true);
 			if (vr.validated) {
 				validatedJobDtos.add(dto);
 			} else {
@@ -202,7 +199,7 @@ public class JobServiceImpl implements JobService {
 
 	@Override
 	public JobDto jobToDto(Job job) {
-		JobDto jobDto = new JobDto();
+		var jobDto = new JobDto();
 		jobDto.setId(job.getId());
 		jobDto.setName(job.getName());
 		jobDto.setCity(job.getCity());

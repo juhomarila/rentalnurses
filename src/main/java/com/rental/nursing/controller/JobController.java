@@ -18,7 +18,6 @@ import com.rental.nursing.dto.JobDto;
 import com.rental.nursing.dto.NurseJobUpdateDto;
 import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.JobService;
-import com.rental.nursing.service.ValidateServiceResult;
 
 @RestController
 @RequestMapping("/job")
@@ -37,7 +36,7 @@ public class JobController {
 	@PostMapping
 	public ResponseEntity<?> createJob(@RequestBody JobDto dto) {
 		logger.postLogStart("createJob");
-		ValidateServiceResult<JobDto> vsr = jobService.createJob(dto);
+		var vsr = jobService.createJob(dto);
 		logger.postLogEnd("createJob");
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
 				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
@@ -47,7 +46,7 @@ public class JobController {
 	@GetMapping
 	public ResponseEntity<List<JobDto>> getAllJobs() {
 		logger.getLogStart("getAllJobs");
-		ValidateServiceResult<List<JobDto>> vsr = jobService.getAllJobs();
+		var vsr = jobService.getAllJobs();
 		logger.getLogEnd("getAllJobs");
 		return vsr.getT().isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(vsr.getT());
 	}
@@ -55,7 +54,7 @@ public class JobController {
 	@PutMapping("/{id}")
 	public ResponseEntity<?> updateJob(@PathVariable("id") Long id, @RequestBody JobDto updatedJobDto) {
 		logger.putLogStart("updateJob");
-		ValidateServiceResult<JobDto> vsr = jobService.updateJob(id, updatedJobDto);
+		var vsr = jobService.updateJob(id, updatedJobDto);
 		logger.putLogEnd("updateJob");
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
 				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
@@ -66,7 +65,7 @@ public class JobController {
 	public ResponseEntity<?> updateOrRemoveJobNurse(@PathVariable("id") Long id,
 			@RequestBody NurseJobUpdateDto nurseJobUpdateDto) {
 		logger.putLogStart("updateOrRemoveJobNurse");
-		ValidateServiceResult<JobDto> vsr = jobService.updateOrRemoveJobNurse(id, nurseJobUpdateDto);
+		var vsr = jobService.updateOrRemoveJobNurse(id, nurseJobUpdateDto);
 		logger.putLogEnd("updateOrRemoveJobNurse");
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
 				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
@@ -76,7 +75,7 @@ public class JobController {
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getJobById(@PathVariable("id") Long id) {
 		logger.getLogStart("getJobById");
-		ValidateServiceResult<JobDto> vsr = jobService.getJobById(id);
+		var vsr = jobService.getJobById(id);
 		logger.getLogEnd("getJobById");
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
 				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),
@@ -86,7 +85,7 @@ public class JobController {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deleteJob(@PathVariable("id") Long id) {
 		logger.deleteLogStart("getEmployerById");
-		ValidateServiceResult<Boolean> vsr = jobService.deleteJob(id);
+		var vsr = jobService.deleteJob(id);
 		logger.deleteLogEnd("getEmployerById");
 		return vsr.getVr().validated ? new ResponseEntity<>(vsr.getT(), HttpStatus.OK)
 				: new ResponseEntity<>(vsr.getVr().getErrorMsg(),

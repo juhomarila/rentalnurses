@@ -10,7 +10,7 @@ import com.rental.nursing.dto.NurseDto;
 @Service
 public class NurseValidator {
 	public ValidationResult validate(NurseDto nurseDto, boolean isNursePresent) {
-		List<String> errorMsg = new ArrayList<>();
+		var errorMsg = new ArrayList<String>();
 		if (!isNursePresent) {
 			errorMsg.add(ValidationError.VE001 + ".nurseEntity");
 		}
