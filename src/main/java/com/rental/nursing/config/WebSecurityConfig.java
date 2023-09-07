@@ -1,38 +1,35 @@
 package com.rental.nursing.config;
 
-import java.util.Collections;
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
-public class WebSecurityConfig {
+@EnableWebMvc
+public class WebSecurityConfig implements WebMvcConfigurer {
 
 	@Bean
-	public SecurityFilterChain web(HttpSecurity http) throws Exception {
-		http.cors();
-		http.authorizeRequests().anyRequest().permitAll().and().csrf().disable();
-		// http.authorizeRequests().anyRequest().authenticated().and().httpBasic();
-		return http.build();
+	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
+		return new MvcRequestMatcher.Builder(introspector);
 	}
 
 	@Bean
-	public FilterRegistrationBean<CorsFilter> simpleCorsFilter() {
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(Collections.singletonList("*"));
-		config.setAllowedMethods(Collections.singletonList("*"));
-		config.setAllowedHeaders(Collections.singletonList("*"));
-		source.registerCorsConfiguration("/**", config);
-		FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-		bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-		return bean;
+	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
+		http.authorizeHttpRequests(authorize -> authorize.requestMatchers(mvc.pattern("/**")).permitAll()
+				.requestMatchers(antMatcher("/**")).permitAll().anyRequest().authenticated());
+		return http.build();
+	}
+
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		registry.addMapping("/**").allowedOrigins("*").allowedMethods("*").allowedHeaders("*");
 	}
 }

@@ -18,6 +18,8 @@ import com.rental.nursing.dto.EmployerDto;
 import com.rental.nursing.logging.NurseLogger;
 import com.rental.nursing.service.EmployerService;
 
+import jakarta.annotation.security.PermitAll;
+
 @RestController
 @RequestMapping("/employer")
 public class EmployerController {
@@ -33,6 +35,7 @@ public class EmployerController {
 	}
 
 	@PostMapping
+	@PermitAll
 	public ResponseEntity<?> createEmployer(@RequestBody EmployerDto dto) {
 		logger.postLogStart("createEmployer");
 		var vsr = employerService.createEmployer(dto);
@@ -53,7 +56,9 @@ public class EmployerController {
 	}
 
 	@GetMapping
+	@PermitAll
 	public ResponseEntity<List<EmployerDto>> getAllEmployers() {
+		System.out.println("Received createEmployer request");
 		logger.getLogStart("getAllEmployers");
 		var vsr = employerService.getEmployers();
 		logger.getLogEnd("getAllEmployers");
